@@ -2,9 +2,14 @@
   "dependencies": {
     "@headlessui/react": "^0.3.1",
     "classnames": "^2.2.6",
+    "elkjs": "^0.7.1",
     "next": "^10.0.1",
     "react": "^17.0.1",
-    "react-dom": "^17.0.1"
+    "react-dom": "^17.0.1",
+    "react-hook-form": "^6.15.5",
+    "react-spring": "^9.0.0",
+    "y-indexeddb": "^9.0.6",
+    "yjs": "^13.5.3"
   },
   "devDependencies": {
     "@types/classnames": "^2.2.10",
