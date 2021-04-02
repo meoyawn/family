@@ -1,7 +1,6 @@
 import * as Y from 'yjs'
-import ELK, { ElkEdge, ElkNode } from 'elkjs/lib/elk.bundled.js'
-
-export const elk = new ELK()
+import { ElkEdge, ElkLabel, ElkNode } from 'elkjs/lib/elk.bundled.js'
+import calculateSize from 'calculate-size';
 
 type FamilyID = string
 type PersonID = string
@@ -9,63 +8,98 @@ type PersonID = string
 export interface Person {
   id: PersonID
   name: string
+
   families: FamilyID[]
+
+  birthYear?: number
+  deathYear?: number
 }
 
 export interface Family {
   id: FamilyID
   name: string
   children: PersonID[]
+
+  startYear: number
+  endYear?: number
 }
 
-export interface Doc {
+export interface FamilyTree {
   people: Y.Map<Person>
   families: Y.Map<Family>
 }
 
-const personNode = ({ id, name }: Person): ElkNode => (
+const measuredLabel = (text: string): ElkLabel => (
   {
-    id,
-    labels: [{
-      id: name,
-      text: name,
-    }],
-    layoutOptions: {
-      'org.eclipse.elk.nodeLabels.placement': 'INSIDE H_CENTER V_CENTER',
-      'org.eclipse.elk.nodeSize.constraints': 'PORTS PORT_LABELS NODE_LABELS MINIMUM_SIZE',
-    },
-  }
+    text,
+    ...calculateSize(text),
+  } as ElkLabel
 )
+
+const personNode = ({ id, name, birthYear, deathYear }: Person): ElkNode => {
+  const labels = [measuredLabel(name)]
+
+  if (birthYear) {
+    labels.push(measuredLabel(`${birthYear} - ${deathYear}`))
+  }
+
+  return (
+    {
+      id,
+      labels,
+      layoutOptions: {
+        'org.eclipse.elk.nodeLabels.placement': 'INSIDE H_CENTER V_CENTER',
+        'org.eclipse.elk.nodeSize.constraints': 'PORTS PORT_LABELS NODE_LABELS MINIMUM_SIZE',
+      },
+    }
+  );
+}
 
 const personEdges = ({ id, families }: Person): ElkEdge[] =>
   families.map(fid => ({
     id: `${id}:${fid}`,
     sources: [id],
-    targets: [fid],
+    targets: [`${fid}.spouses`],
     type: 'UNDIRECTED',
   }))
 
 const familyNode = ({ id }: Family): ElkNode => (
   {
     id,
-    width: 1,µ
+    width: 1,
     height: 1,
+    ports: [
+      {
+        id: "spouses",
+        width: 1,
+        height: 1,
+      },
+      {
+        id: "children",
+        width: 1,
+        height: 1,
+      },
+    ]
   }
 )
 
 const familyEdges = ({ id, children }: Family): ElkEdge[] =>
   children.map(cid => ({
     id: `${id}:${cid}`,
-    sources: [id],
+    sources: [`${id}.children`],
     targets: [cid],
     type: 'UNDIRECTED',
   }))
 
-const toELK = ({ people, families }: Doc): ElkNode => {
+export const toELK = ({ people, families }: FamilyTree): ElkNode => {
+
   const root: ElkNode = {
     id: 'root',
     children: [],
     edges: [],
+    layoutOptions: {
+      'org.eclipse.elk.hierarchyHandling': "INCLUDE_CHILDREN",
+    },
   }
 
   people.forEach(p => {
