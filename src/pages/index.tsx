@@ -1,43 +1,140 @@
-import React, { useEffect, useRef } from "react"
-import { useForm } from "react-hook-form";
+import React, { useEffect, useRef, useState } from "react"
+import { useForm } from "react-hook-form"
 import * as Y from 'yjs'
-import { IndexeddbPersistence } from "y-indexeddb";
-import { animated, Spring } from "react-spring";
-import ELK, { ElkNode } from "elkjs/lib/elk.bundled.js";
-import { FamilyTree, toELK } from "../lib/types";
-import { addPerson } from "../lib/modification";
+import { IndexeddbPersistence } from "y-indexeddb"
+import { animated, useSpring } from "react-spring"
+import ELK, { ElkLabel, ElkNode } from "elkjs/lib/elk.bundled.js"
+import { useDrag, useHover } from "react-use-gesture"
+import { ArrowOptions, getBoxToBoxArrow } from "perfect-arrows";
+
+import { toELK } from "../lib/layout"
+import { giveBirth } from "../lib/modification"
+import { FamilyTree } from "../lib/types";
+
+interface Rect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+const addParent = (parent: Rect, child: Rect): Rect => (
+  {
+    x: parent.x + child.x,
+    y: parent.y + child.y,
+    width: child.width,
+    height: child.height,
+  }
+)
+
+const Label = ({ label, inParent }: {
+  label: ElkLabel
+  inParent: Rect
+}) => {
+  const lblProps = useSpring(inParent)
+
+  return (
+    <animated.text
+      {...lblProps}
+      dominantBaseline="text-before-edge"
+      fontFamily={"Arial, sans-serif"}
+      fontSize={"16px"}
+      pointerEvents={"none"}
+    >
+      {label.text}
+    </animated.text>
+  )
+}
+
+type Vector2 = [x: number, y: number]
+
+const boxToPoint = ({ x, y, width, height }: Rect, [px, py]: Vector2, options?: ArrowOptions) =>
+  getBoxToBoxArrow(x, y, width, height, px, py, 1, 1, options)
+
+function PerfectArrow({ rect, point }: {
+  rect: Rect
+  point: Vector2
+}): JSX.Element {
+  const [sx, sy, cx, cy, ex, ey, ae, as, ec] = boxToPoint(rect, point, {
+    bow: 0.2,
+    stretch: 0.5,
+    stretchMin: 40,
+    stretchMax: 420,
+    padStart: 0,
+    padEnd: 20,
+    flip: false,
+    straights: true,
+  })
+
+  const endAngleAsDegrees = ae * (180 / Math.PI)
+
+  return (
+    <g
+      stroke="#000"
+      fill="#000"
+      strokeWidth={3}
+    >
+      <circle cx={sx} cy={sy} r={4} />
+      <path d={`M${sx},${sy} Q${cx},${cy} ${ex},${ey}`} fill="none" />
+      <polygon
+        points="0,-6 12,0, 0,6"
+        transform={`translate(${ex},${ey}) rotate(${endAngleAsDegrees})`}
+      />
+    </g>
+  )
+}
+
+const Person = ({ person, inParent }: {
+  person: ElkNode,
+  inParent: Rect
+}): JSX.Element => {
+
+  const [hovering, setHovering] = useState(false)
+  const [arrow, setArrow] = useState<Vector2 | null>(null)
+
+  const drag = useDrag(({ dragging, xy: [x, y], event }) => {
+    const el = event.target as SVGRectElement
+    const { offsetLeft, offsetTop } = el.ownerSVGElement!.parentElement!
+    setArrow(dragging ? [x - offsetLeft, y - offsetTop] : null)
+    console.log(document.elementFromPoint(x,y))
+  }, {})
+
+  const hover = useHover(({ hovering }) => setHovering(hovering))
+
+  const props = useSpring({ ...inParent, stroke: hovering ? "blue" : "black" })
+
+  return (
+    <g>
+      <animated.rect
+        {...props}
+        {...drag()}
+        {...hover()}
+        fill="transparent"
+        stroke={hovering && !arrow ? "blue" : "black"}
+        strokeWidth={2}
+        rx={2}
+        cursor={"pointer"}
+      />
+
+      {person.labels?.map(label => (
+        <Label
+          inParent={addParent(inParent, label as Rect)}
+          label={label}
+        />
+      ))}
+
+      {arrow && (
+        <PerfectArrow
+          rect={inParent}
+          point={arrow}
+        />
+      )}
+    </g>
+  )
+}
 
 interface FormValues {
   name: string
-}
-
-function NodeComp(node: ElkNode): JSX.Element {
-  return (
-    <g>
-      <Spring
-        to={node}
-        native
-      >
-        {props => (
-          <animated.rect {...props} />
-        )}
-      </Spring>
-
-      {node.labels?.map(label => (
-        <Spring
-          key={label.text}
-          to={label}
-          native
-        >
-          {props => (
-            <animated.text {...props}>
-              {label.text}
-            </animated.text>
-          )}
-        </Spring>
-      ))}
-    </g>
-  )
 }
 
 function NewPerson({ submit }: { submit: (x: FormValues) => void }): JSX.Element {
@@ -56,6 +153,7 @@ function NewPerson({ submit }: { submit: (x: FormValues) => void }): JSX.Element
 
 export default function Index(): JSX.Element {
   const treeRef = useRef<FamilyTree>({} as FamilyTree)
+  const [layout, setLayout] = useState<ElkNode | null>(null)
 
   useEffect(() => {
     const doc = new Y.Doc()
@@ -72,7 +170,7 @@ export default function Index(): JSX.Element {
     const elk = new ELK()
     const onDocChange = async () => {
       const layouted = await elk.layout(toELK(tree))
-      console.log(layouted)
+      setLayout(layouted)
     };
     doc.on('update', onDocChange)
     return () => {
@@ -81,8 +179,20 @@ export default function Index(): JSX.Element {
   }, [])
 
   return (
-    <div>
-      <NewPerson submit={x => addPerson(treeRef.current, x.name)} />
+    <div className="flex flex-col h-screen">
+      <NewPerson submit={x => giveBirth(treeRef.current, x.name)} />
+
+      <div className="w-full h-full">
+        <svg className="w-full h-full">
+          {layout?.children?.map(p => (
+            <Person
+              key={p.id}
+              person={p}
+              inParent={addParent(layout as Rect, p as Rect)}
+            />
+          ))}
+        </svg>
+      </div>
     </div>
   )
 }
