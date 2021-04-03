@@ -4,12 +4,12 @@ import * as Y from 'yjs'
 import { IndexeddbPersistence } from "y-indexeddb"
 import { animated, useSpring } from "react-spring"
 import ELK, { ElkLabel, ElkNode } from "elkjs/lib/elk.bundled.js"
-import { useDrag, useHover } from "react-use-gesture"
-import { ArrowOptions, getBoxToBoxArrow } from "perfect-arrows";
+import { useGesture } from "react-use-gesture"
+import { ArrowOptions, getBoxToBoxArrow } from "perfect-arrows"
 
 import { toELK } from "../lib/layout"
 import { giveBirth } from "../lib/modification"
-import { FamilyTree } from "../lib/types";
+import { FamilyTree } from "../lib/types"
 
 interface Rect {
   x: number
@@ -37,9 +37,9 @@ const Label = ({ label, inParent }: {
     <animated.text
       {...lblProps}
       dominantBaseline="text-before-edge"
-      fontFamily={"Arial, sans-serif"}
-      fontSize={"16px"}
-      pointerEvents={"none"}
+      fontFamily="Arial, sans-serif"
+      fontSize="16px"
+      pointerEvents="none"
     >
       {label.text}
     </animated.text>
@@ -48,13 +48,13 @@ const Label = ({ label, inParent }: {
 
 type Vector2 = [x: number, y: number]
 
-const boxToPoint = ({ x, y, width, height }: Rect, [px, py]: Vector2, options?: ArrowOptions) =>
+const boxToPoint = ({ x, y, width, height }: Rect, [px, py]: Vector2, options?: ArrowOptions): number[] =>
   getBoxToBoxArrow(x, y, width, height, px, py, 1, 1, options)
 
-function PerfectArrow({ rect, point }: {
+const PerfectArrow = ({ rect, point }: {
   rect: Rect
   point: Vector2
-}): JSX.Element {
+}): JSX.Element => {
   const [sx, sy, cx, cy, ex, ey, ae, as, ec] = boxToPoint(rect, point, {
     bow: 0.2,
     stretch: 0.5,
@@ -82,7 +82,7 @@ function PerfectArrow({ rect, point }: {
       />
     </g>
   )
-}
+};
 
 const Person = ({ person, inParent }: {
   person: ElkNode,
@@ -92,23 +92,24 @@ const Person = ({ person, inParent }: {
   const [hovering, setHovering] = useState(false)
   const [arrow, setArrow] = useState<Vector2 | null>(null)
 
-  const drag = useDrag(({ dragging, xy: [x, y], event }) => {
-    const el = event.target as SVGRectElement
-    const { offsetLeft, offsetTop } = el.ownerSVGElement!.parentElement!
-    setArrow(dragging ? [x - offsetLeft, y - offsetTop] : null)
-    console.log(document.elementFromPoint(x,y))
-  }, {})
-
-  const hover = useHover(({ hovering }) => setHovering(hovering))
-
   const props = useSpring({ ...inParent, stroke: hovering ? "blue" : "black" })
+
+  const gestures = useGesture({
+    onDrag: ({ dragging, xy: [x, y], event: { target } }) => {
+      const svgRect = target as SVGRectElement
+      const { offsetLeft, offsetTop } = svgRect.ownerSVGElement!.parentElement!
+
+      setArrow(dragging ? [x - offsetLeft, y - offsetTop] : null)
+      // console.log(document.elementFromPoint(x, y))
+    },
+    onHover: ({ hovering }) => setHovering(hovering),
+  })
 
   return (
     <g>
       <animated.rect
         {...props}
-        {...drag()}
-        {...hover()}
+        {...gestures()}
         fill="transparent"
         stroke={hovering && !arrow ? "blue" : "black"}
         strokeWidth={2}
@@ -118,6 +119,7 @@ const Person = ({ person, inParent }: {
 
       {person.labels?.map(label => (
         <Label
+          key={label.text}
           inParent={addParent(inParent, label as Rect)}
           label={label}
         />
@@ -151,6 +153,7 @@ function NewPerson({ submit }: { submit: (x: FormValues) => void }): JSX.Element
   )
 }
 
+// noinspection JSUnusedGlobalSymbols
 export default function Index(): JSX.Element {
   const treeRef = useRef<FamilyTree>({} as FamilyTree)
   const [layout, setLayout] = useState<ElkNode | null>(null)
