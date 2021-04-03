@@ -6,10 +6,11 @@ import { animated, useSpring } from "react-spring"
 import ELK, { ElkLabel, ElkNode } from "elkjs/lib/elk.bundled.js"
 import { useGesture } from "react-use-gesture"
 import { ArrowOptions, getBoxToBoxArrow } from "perfect-arrows"
+import { atom, useAtom } from "jotai";
 
 import { toELK } from "../lib/layout"
-import { giveBirth } from "../lib/modification"
-import { FamilyTree } from "../lib/types"
+import { giveBirth, marry } from "../lib/modification"
+import { FamilyTree, PersonID } from "../lib/types"
 
 interface Rect {
   x: number
@@ -82,27 +83,44 @@ const PerfectArrow = ({ rect, point }: {
       />
     </g>
   )
-};
+}
 
-const Person = ({ person, inParent }: {
+const hoveringAtom = atom<PersonID | undefined>(undefined)
+
+const Person = ({ person, inParent, tree }: {
   person: ElkNode,
-  inParent: Rect
+  inParent: Rect,
+  tree: FamilyTree,
 }): JSX.Element => {
 
-  const [hovering, setHovering] = useState(false)
+  const [hovering, setHovering] = useAtom(hoveringAtom)
   const [arrow, setArrow] = useState<Vector2 | null>(null)
 
   const props = useSpring({ ...inParent, stroke: hovering ? "blue" : "black" })
 
   const gestures = useGesture({
-    onDrag: ({ dragging, xy: [x, y], event: { target } }) => {
+    onDrag: ({ dragging, xy: [x, y], event: { target }, last, tap }) => {
       const svgRect = target as SVGRectElement
       const { offsetLeft, offsetTop } = svgRect.ownerSVGElement!.parentElement!
 
       setArrow(dragging ? [x - offsetLeft, y - offsetTop] : null)
-      // console.log(document.elementFromPoint(x, y))
+
+      if (dragging) {
+        const el = document.elementFromPoint(x, y)
+        setHovering(el instanceof SVGRectElement ? el.dataset['id'] : undefined)
+      }
+
+      if (last && !tap) {
+        const el = document.elementFromPoint(x, y)
+        if (el instanceof SVGRectElement) {
+          const targetID = el.dataset['id']
+          if (targetID) {
+            marry(tree, person.id, targetID)
+          }
+        }
+      }
     },
-    onHover: ({ hovering }) => setHovering(hovering),
+    onHover: ({ hovering }) => setHovering(hovering ? person.id : undefined),
   })
 
   return (
@@ -111,10 +129,12 @@ const Person = ({ person, inParent }: {
         {...props}
         {...gestures()}
         fill="transparent"
-        stroke={hovering && !arrow ? "blue" : "black"}
+        stroke={hovering == person.id ? "blue" : "black"}
         strokeWidth={2}
         rx={2}
         cursor={"pointer"}
+
+        data-id={person.id}
       />
 
       {person.labels?.map(label => (
@@ -192,6 +212,7 @@ export default function Index(): JSX.Element {
               key={p.id}
               person={p}
               inParent={addParent(layout as Rect, p as Rect)}
+              tree={treeRef.current}
             />
           ))}
         </svg>

@@ -47,12 +47,12 @@ const familyNode = ({ id }: Family): ElkNode => (
     height: 1,
     ports: [
       {
-        id: "spouses",
+        id: `${id}.spouses`,
         width: 1,
         height: 1,
       },
       {
-        id: "children",
+        id: `${id}.children`,
         width: 1,
         height: 1,
       },
@@ -75,7 +75,7 @@ export const toELK = ({ people, families }: FamilyTree): ElkNode => {
     children: [],
     edges: [],
     layoutOptions: {
-      'org.eclipse.elk.hierarchyHandling': "INCLUDE_CHILDREN",
+      'org.eclipse.elk.direction': "DOWN",
     },
   }
 
@@ -88,6 +88,8 @@ export const toELK = ({ people, families }: FamilyTree): ElkNode => {
     root.children?.push(familyNode(f))
     root.edges?.push(...familyEdges(f))
   })
+
+  console.log(root)
 
   return root
 }

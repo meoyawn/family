@@ -1,7 +1,9 @@
 import { FamilyID, FamilyTree, PersonID } from "./types";
 
 export const marry = ({ people, families }: FamilyTree, p1: PersonID, p2: PersonID) => {
-  const id = `${p1}:${p2}`
+  if (p1 === p2) return
+
+  const id = [p1, p2].sort().join(':')
   if (families.get(id)) return
 
   families.doc?.transact(() => {
@@ -21,7 +23,7 @@ export const marry = ({ people, families }: FamilyTree, p1: PersonID, p2: Person
 
     const person2 = people.get(p2)
     if (person2) {
-      people.set(p1, {
+      people.set(p2, {
         ...person2,
         families: person2.families.concat(id),
       })
@@ -31,7 +33,7 @@ export const marry = ({ people, families }: FamilyTree, p1: PersonID, p2: Person
 
 export const giveBirth = ({ people, families }: FamilyTree, name: string, fid?: FamilyID) => {
   people.doc?.transact(() => {
-    const id = Math.random().toString(36)
+    const id = Math.random().toString(36).substring(2)
 
     people.set(id, {
       id,
