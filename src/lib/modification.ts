@@ -17,7 +17,7 @@ export const marry = ({ people, families }: FamilyTree, p1: PersonID, p2: Person
     if (person1) {
       people.set(p1, {
         ...person1,
-        families: person1.families.concat(id),
+        marriages: person1.marriages.concat(id),
       })
     }
 
@@ -25,7 +25,7 @@ export const marry = ({ people, families }: FamilyTree, p1: PersonID, p2: Person
     if (person2) {
       people.set(p2, {
         ...person2,
-        families: person2.families.concat(id),
+        marriages: person2.marriages.concat(id),
       })
     }
   })
@@ -38,7 +38,7 @@ export const giveBirth = ({ people, families }: FamilyTree, name: string, fid?: 
     people.set(id, {
       id,
       name,
-      families: [],
+      marriages: [],
     })
 
     if (fid) {
@@ -50,5 +50,18 @@ export const giveBirth = ({ people, families }: FamilyTree, name: string, fid?: 
         })
       }
     }
+  })
+}
+
+export const makeChild = ({ people, families }: FamilyTree, pid: PersonID, fid: FamilyID) => {
+  const family = families.get(fid)
+  if (!family) return
+  if (family.children.includes(pid)) return
+
+  families.doc?.transact(() => {
+    families.set(fid, {
+      ...family,
+      children: family.children.concat(pid),
+    })
   })
 }

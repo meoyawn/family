@@ -29,11 +29,11 @@ const personNode = ({ id, name, birthYear, deathYear }: Person): ElkNode => {
         'org.eclipse.elk.nodeSize.constraints': 'PORTS PORT_LABELS NODE_LABELS MINIMUM_SIZE',
       },
     }
-  );
+  )
 }
 
-const personEdges = ({ id, families }: Person): ElkEdge[] =>
-  families.map(fid => ({
+const personEdges = ({ id, marriages }: Person): ElkEdge[] =>
+  marriages.map(fid => ({
     id: `${id}:${fid}`,
     sources: [id],
     targets: [`${fid}.spouses`],
@@ -76,6 +76,7 @@ export const toELK = ({ people, families }: FamilyTree): ElkNode => {
     edges: [],
     layoutOptions: {
       'org.eclipse.elk.direction': "DOWN",
+      'org.eclipse.elk.layered.nodePlacement.strategy': 'LINEAR_SEGMENTS',
     },
   }
 

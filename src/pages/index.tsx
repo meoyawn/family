@@ -3,13 +3,13 @@ import { useForm } from "react-hook-form"
 import * as Y from 'yjs'
 import { IndexeddbPersistence } from "y-indexeddb"
 import { animated, useSpring } from "react-spring"
-import ELK, { ElkLabel, ElkNode } from "elkjs/lib/elk.bundled.js"
+import ELK, { ElkLabel, ElkNode } from "elkjs/lib/elk.bundled"
 import { useGesture } from "react-use-gesture"
 import { ArrowOptions, getBoxToBoxArrow } from "perfect-arrows"
-import { atom, useAtom } from "jotai";
+import { atom, Provider, useAtom } from "jotai"
 
 import { toELK } from "../lib/layout"
-import { giveBirth, marry } from "../lib/modification"
+import { giveBirth, makeChild, marry } from "../lib/modification"
 import { FamilyTree, PersonID } from "../lib/types"
 
 interface Rect {
@@ -32,11 +32,11 @@ const Label = ({ label, inParent }: {
   label: ElkLabel
   inParent: Rect
 }) => {
-  const lblProps = useSpring(inParent)
+  const spring = useSpring(inParent)
 
   return (
     <animated.text
-      {...lblProps}
+      {...spring}
       dominantBaseline="text-before-edge"
       fontFamily="Arial, sans-serif"
       fontSize="16px"
@@ -96,54 +96,76 @@ const Person = ({ person, inParent, tree }: {
   const [hovering, setHovering] = useAtom(hoveringAtom)
   const [arrow, setArrow] = useState<Vector2 | null>(null)
 
-  const props = useSpring({ ...inParent, stroke: hovering ? "blue" : "black" })
+  const spring = useSpring(inParent)
 
   const gestures = useGesture({
-    onDrag: ({ dragging, xy: [x, y], event: { target }, last, tap }) => {
-      const svgRect = target as SVGRectElement
+    onHover: ({ hovering }) => {
+      setHovering(hovering ? person.id : undefined)
+    },
+    onDrag: ({ xy: [x, y], event: { target }, tap }) => {
+      if (tap) return
+
+      const svgRect = target as SVGElement
       const { offsetLeft, offsetTop } = svgRect.ownerSVGElement!.parentElement!
+      setArrow([x - offsetLeft, y - offsetTop])
 
-      setArrow(dragging ? [x - offsetLeft, y - offsetTop] : null)
-
-      if (dragging) {
-        const el = document.elementFromPoint(x, y)
-        setHovering(el instanceof SVGRectElement ? el.dataset['id'] : undefined)
-      }
-
-      if (last && !tap) {
-        const el = document.elementFromPoint(x, y)
-        if (el instanceof SVGRectElement) {
-          const targetID = el.dataset['id']
-          if (targetID) {
-            marry(tree, person.id, targetID)
-          }
+      const el = document.elementFromPoint(x, y)?.parentNode as SVGElement
+      setHovering(el?.dataset?.['id'])
+    },
+    onDragEnd: ({ xy: [x, y] }) => {
+      setArrow(null)
+      const el = document.elementFromPoint(x, y)?.parentNode as SVGElement
+      const targetID = el?.dataset?.['id']
+      if (targetID) {
+        if (targetID.includes(':')) {
+          makeChild(tree, person.id, targetID)
+        } else {
+          marry(tree, person.id, targetID)
         }
       }
     },
-    onHover: ({ hovering }) => setHovering(hovering ? person.id : undefined),
   })
+
+  const isHovering = hovering == person.id
 
   return (
     <g>
-      <animated.rect
-        {...props}
+      <g
         {...gestures()}
-        fill="transparent"
-        stroke={hovering == person.id ? "blue" : "black"}
-        strokeWidth={2}
-        rx={2}
-        cursor={"pointer"}
-
+        cursor="pointer"
         data-id={person.id}
-      />
-
-      {person.labels?.map(label => (
-        <Label
-          key={label.text}
-          inParent={addParent(inParent, label as Rect)}
-          label={label}
+      >
+        <animated.rect
+          {...spring}
+          fill="transparent"
+          stroke={isHovering ? "blue" : "black"}
+          strokeWidth={2}
+          rx={2}
         />
-      ))}
+
+        {person.labels?.map(label => (
+          <Label
+            key={label.text}
+            inParent={addParent(inParent, label as Rect)}
+            label={label}
+          />
+        ))}
+
+        {isHovering && (
+          <g
+            stroke="currentColor"
+            fill="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            transform={`translate(${inParent.x + inParent.width / 2 - 12}, ${inParent.y - 12})`}
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="16 12 12 8 8 12" />
+            <line x1="12" y1="16" x2="12" y2="8" />
+          </g>
+        )}
+      </g>
 
       {arrow && (
         <PerfectArrow
@@ -202,21 +224,23 @@ export default function Index(): JSX.Element {
   }, [])
 
   return (
-    <div className="flex flex-col h-screen">
-      <NewPerson submit={x => giveBirth(treeRef.current, x.name)} />
+    <Provider>
+      <div className="flex flex-col h-screen">
+        <NewPerson submit={x => giveBirth(treeRef.current, x.name)} />
 
-      <div className="w-full h-full">
-        <svg className="w-full h-full">
-          {layout?.children?.map(p => (
-            <Person
-              key={p.id}
-              person={p}
-              inParent={addParent(layout as Rect, p as Rect)}
-              tree={treeRef.current}
-            />
-          ))}
-        </svg>
+        <div className="w-full h-full">
+          <svg className="w-full h-full">
+            {layout?.children?.map(p => (
+              <Person
+                key={p.id}
+                person={p}
+                inParent={addParent(layout as Rect, p as Rect)}
+                tree={treeRef.current}
+              />
+            ))}
+          </svg>
+        </div>
       </div>
-    </div>
+    </Provider>
   )
 }

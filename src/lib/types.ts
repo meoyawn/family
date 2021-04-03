@@ -7,7 +7,7 @@ export interface Person {
   id: PersonID
   name: string
 
-  families: FamilyID[]
+  marriages: FamilyID[]
 
   birthYear?: number
   deathYear?: number
