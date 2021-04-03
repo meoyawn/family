@@ -37,14 +37,13 @@ const personEdges = ({ id, marriages }: Person): ElkEdge[] =>
     id: `${id}:${fid}`,
     sources: [id],
     targets: [`${fid}.spouses`],
-    type: 'UNDIRECTED',
   }))
 
 const familyNode = ({ id }: Family): ElkNode => (
   {
     id,
-    width: 1,
-    height: 1,
+    width: 24,
+    height: 24,
     ports: [
       {
         id: `${id}.spouses`,
@@ -65,7 +64,6 @@ const familyEdges = ({ id, children }: Family): ElkEdge[] =>
     id: `${id}:${cid}`,
     sources: [`${id}.children`],
     targets: [cid],
-    type: 'UNDIRECTED',
   }))
 
 export const toELK = ({ people, families }: FamilyTree): ElkNode => {

@@ -1,12 +1,14 @@
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import * as Y from 'yjs'
 import { IndexeddbPersistence } from "y-indexeddb"
-import { animated, useSpring } from "react-spring"
-import ELK, { ElkLabel, ElkNode } from "elkjs/lib/elk.bundled"
+import { animated, Interpolation, to, useSpring } from "react-spring"
+import ELK, { ElkEdge, ElkEdgeSection, ElkLabel, ElkNode, ElkPoint } from "elkjs/lib/elk.bundled.js"
 import { useGesture } from "react-use-gesture"
 import { ArrowOptions, getBoxToBoxArrow } from "perfect-arrows"
 import { atom, Provider, useAtom } from "jotai"
+import { line } from "d3-shape";
+import { interpolatePath } from "d3-interpolate-path"
 
 import { toELK } from "../lib/layout"
 import { giveBirth, makeChild, marry } from "../lib/modification"
@@ -28,11 +30,11 @@ const addParent = (parent: Rect, child: Rect): Rect => (
   }
 )
 
-const Label = ({ label, inParent }: {
+const Label = ({ label, rect }: {
   label: ElkLabel
-  inParent: Rect
+  rect: Rect
 }) => {
-  const spring = useSpring(inParent)
+  const spring = useSpring(rect)
 
   return (
     <animated.text
@@ -86,6 +88,47 @@ const PerfectArrow = ({ rect, point }: {
 }
 
 const hoveringAtom = atom<PersonID | undefined>(undefined)
+
+const ortho = line<ElkPoint>(({ x }) => x, ({ y }) => y)
+
+const useInterpolatePath = (d?: string): Interpolation<string> => {
+  const prev = useRef(d)
+  const interpolator = useMemo(() => interpolatePath(prev.current, d), [d])
+
+  const spring = useSpring({
+    from: { t: 0 },
+    to: { t: 1 },
+    reset: d !== prev.current,
+  })
+
+  prev.current = d
+
+  return to(spring.t, interpolator)
+}
+
+const EdgeComp = ({ edge, inParent }: {
+  edge: ElkEdge,
+  inParent: Rect,
+}): JSX.Element => {
+
+  // @ts-ignore sections
+  const sections: ElkEdgeSection[] = edge.sections
+
+  const animatedD = useInterpolatePath(
+    ortho(
+      sections.reduce((acc, { startPoint, bendPoints, endPoint }) => {
+        acc.push(startPoint)
+        bendPoints?.forEach(x => acc.push(x))
+        acc.push(endPoint)
+        return acc
+      }, Array<ElkPoint>())
+    )
+  )
+
+  return (
+    <animated.path fill="none" stroke="black" d={animatedD} />
+  )
+}
 
 const Person = ({ person, inParent, tree }: {
   person: ElkNode,
@@ -146,7 +189,7 @@ const Person = ({ person, inParent, tree }: {
         {person.labels?.map(label => (
           <Label
             key={label.text}
-            inParent={addParent(inParent, label as Rect)}
+            rect={addParent(inParent, label as Rect)}
             label={label}
           />
         ))}
@@ -181,7 +224,7 @@ interface FormValues {
   name: string
 }
 
-function NewPerson({ submit }: { submit: (x: FormValues) => void }): JSX.Element {
+const NewPerson = ({ submit }: { submit: (x: FormValues) => void }): JSX.Element => {
   const { register, handleSubmit, reset } = useForm<FormValues>({})
 
   return (
@@ -193,7 +236,7 @@ function NewPerson({ submit }: { submit: (x: FormValues) => void }): JSX.Element
       <button type="submit">Add</button>
     </form>
   )
-}
+};
 
 // noinspection JSUnusedGlobalSymbols
 export default function Index(): JSX.Element {
@@ -230,6 +273,10 @@ export default function Index(): JSX.Element {
 
         <div className="w-full h-full">
           <svg className="w-full h-full">
+            {layout?.edges?.map(e => (
+              <EdgeComp key={e.id} edge={e} inParent={layout as Rect} />
+            ))}
+
             {layout?.children?.map(p => (
               <Person
                 key={p.id}
