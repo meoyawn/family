@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { ReactNode, useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import * as Y from 'yjs'
 import { IndexeddbPersistence } from "y-indexeddb"
@@ -108,7 +108,7 @@ const useInterpolatePath = (d: string): Interpolation<string> => {
   return to(spring.t, interpolator)
 }
 
-const EdgeComp = React.memo(({ edge, inParent }: {
+const EdgeComp = ({ edge, inParent }: {
   edge: ElkEdge,
   inParent: Rect,
 }): JSX.Element => {
@@ -116,14 +116,15 @@ const EdgeComp = React.memo(({ edge, inParent }: {
   // @ts-ignore sections
   const sections: ElkEdgeSection[] = edge.sections
 
-  const d = ortho(
+  const d = useMemo(() => ortho(
     sections.reduce((acc, { startPoint, bendPoints, endPoint }) => {
       acc.push(startPoint)
       bendPoints?.forEach(x => acc.push(x))
       acc.push(endPoint)
       return acc
     }, Array<ElkPoint>())
-  )
+  ), [sections])
+
   if (!d) throw Error()
 
   const animatedD = useInterpolatePath(d)
@@ -131,15 +132,40 @@ const EdgeComp = React.memo(({ edge, inParent }: {
   return (
     <animated.path fill="none" stroke="black" d={animatedD} />
   )
-})
+}
 
-const Person = React.memo(({ person, inParent, tree }: {
+const zoomAtom = atom(zoomIdentity)
+
+const ZoomingGroup = ({ children }: { children: ReactNode }) => {
+  const ref = useRef<SVGGElement | null>(null)
+  const [transform, setTransform] = useAtom(zoomAtom)
+
+  useEffect(() => {
+    select(ref.current?.ownerSVGElement as Element)
+      .call(
+        zoom()
+          .on('zoom', ({ transform }) => setTransform(transform))
+      )
+  }, [])
+
+  return (
+    <g ref={ref} transform={transform.toString()}>
+      {children}
+    </g>
+  )
+}
+
+const Person = ({ person, inParent, tree }: {
   person: ElkNode,
   inParent: Rect,
   tree: FamilyTree,
 }): JSX.Element => {
 
   const [hovering, setHovering] = useAtom(hoveringAtom)
+
+  // TODO should be a ref
+  const [transform] = useAtom(zoomAtom)
+
   const [arrow, setArrow] = useState<Vector2 | null>(null)
 
   const spring = useSpring(inParent)
@@ -148,12 +174,15 @@ const Person = React.memo(({ person, inParent, tree }: {
     onHover: ({ hovering }) => {
       setHovering(hovering ? person.id : undefined)
     },
+    onDragStart: ({ event }) => {
+      event.preventDefault()
+    },
     onDrag: ({ xy: [x, y], event: { target }, tap }) => {
       if (tap) return
 
       const svgRect = target as SVGElement
       const { offsetLeft, offsetTop } = svgRect.ownerSVGElement!.parentElement!
-      setArrow([x - offsetLeft, y - offsetTop])
+      setArrow(transform.invert([x - offsetLeft, y - offsetTop]))
 
       const el = document.elementFromPoint(x, y)?.parentNode as SVGElement
       setHovering(el?.dataset?.['id'])
@@ -172,7 +201,7 @@ const Person = React.memo(({ person, inParent, tree }: {
     },
   })
 
-  const isHovering = hovering == person.id
+  const isHovering = hovering === person.id
 
   return (
     <g>
@@ -221,7 +250,7 @@ const Person = React.memo(({ person, inParent, tree }: {
       )}
     </g>
   )
-})
+}
 
 interface FormValues {
   name: string
@@ -269,22 +298,13 @@ export default function Index(): JSX.Element {
     }
   }, [])
 
-  const [transform, setTransform] = useState(zoomIdentity)
-  const svgRef = useRef<SVGSVGElement>(null)
-  useEffect(() => {
-    select(svgRef.current as Element)
-      .call(
-        zoom().on('zoom', ({ transform }) => setTransform(transform))
-      )
-  }, [])
-
   return (
     <div className="flex flex-col h-screen">
       <NewPerson submit={x => giveBirth(treeRef.current, x.name)} />
 
       <div className="w-full h-full">
-        <svg className="w-full h-full" ref={svgRef}>
-          <g transform={transform.toString()}>
+        <svg className="w-full h-full">
+          <ZoomingGroup>
             {layout?.edges?.map(e => (
               <EdgeComp key={e.id} edge={e} inParent={layout as Rect} />
             ))}
@@ -297,7 +317,7 @@ export default function Index(): JSX.Element {
                 tree={treeRef.current}
               />
             ))}
-          </g>
+          </ZoomingGroup>
         </svg>
       </div>
     </div>
