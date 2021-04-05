@@ -4,11 +4,13 @@ import * as Y from 'yjs'
 import { IndexeddbPersistence } from "y-indexeddb"
 import { animated, Interpolation, to, useSpring } from "react-spring"
 import ELK, { ElkEdge, ElkEdgeSection, ElkLabel, ElkNode, ElkPoint } from "elkjs/lib/elk.bundled.js"
-import { useGesture } from "react-use-gesture"
 import { ArrowOptions, getBoxToBoxArrow } from "perfect-arrows"
-import { atom, Provider, useAtom } from "jotai"
+import { atom, useAtom } from "jotai"
 import { line } from "d3-shape";
 import { interpolatePath } from "d3-interpolate-path"
+import { zoom, zoomIdentity } from "d3-zoom";
+import { select } from "d3-selection";
+import { useGesture } from "react-use-gesture";
 
 import { toELK } from "../lib/layout"
 import { giveBirth, makeChild, marry } from "../lib/modification"
@@ -91,7 +93,7 @@ const hoveringAtom = atom<PersonID | undefined>(undefined)
 
 const ortho = line<ElkPoint>(({ x }) => x, ({ y }) => y)
 
-const useInterpolatePath = (d?: string): Interpolation<string> => {
+const useInterpolatePath = (d: string): Interpolation<string> => {
   const prev = useRef(d)
   const interpolator = useMemo(() => interpolatePath(prev.current, d), [d])
 
@@ -106,7 +108,7 @@ const useInterpolatePath = (d?: string): Interpolation<string> => {
   return to(spring.t, interpolator)
 }
 
-const EdgeComp = ({ edge, inParent }: {
+const EdgeComp = React.memo(({ edge, inParent }: {
   edge: ElkEdge,
   inParent: Rect,
 }): JSX.Element => {
@@ -114,23 +116,24 @@ const EdgeComp = ({ edge, inParent }: {
   // @ts-ignore sections
   const sections: ElkEdgeSection[] = edge.sections
 
-  const animatedD = useInterpolatePath(
-    ortho(
-      sections.reduce((acc, { startPoint, bendPoints, endPoint }) => {
-        acc.push(startPoint)
-        bendPoints?.forEach(x => acc.push(x))
-        acc.push(endPoint)
-        return acc
-      }, Array<ElkPoint>())
-    )
+  const d = ortho(
+    sections.reduce((acc, { startPoint, bendPoints, endPoint }) => {
+      acc.push(startPoint)
+      bendPoints?.forEach(x => acc.push(x))
+      acc.push(endPoint)
+      return acc
+    }, Array<ElkPoint>())
   )
+  if (!d) throw Error()
+
+  const animatedD = useInterpolatePath(d)
 
   return (
     <animated.path fill="none" stroke="black" d={animatedD} />
   )
-}
+})
 
-const Person = ({ person, inParent, tree }: {
+const Person = React.memo(({ person, inParent, tree }: {
   person: ElkNode,
   inParent: Rect,
   tree: FamilyTree,
@@ -218,7 +221,7 @@ const Person = ({ person, inParent, tree }: {
       )}
     </g>
   )
-}
+})
 
 interface FormValues {
   name: string
@@ -266,13 +269,22 @@ export default function Index(): JSX.Element {
     }
   }, [])
 
-  return (
-    <Provider>
-      <div className="flex flex-col h-screen">
-        <NewPerson submit={x => giveBirth(treeRef.current, x.name)} />
+  const [transform, setTransform] = useState(zoomIdentity)
+  const svgRef = useRef<SVGSVGElement>(null)
+  useEffect(() => {
+    select(svgRef.current as Element)
+      .call(
+        zoom().on('zoom', ({ transform }) => setTransform(transform))
+      )
+  }, [])
 
-        <div className="w-full h-full">
-          <svg className="w-full h-full">
+  return (
+    <div className="flex flex-col h-screen">
+      <NewPerson submit={x => giveBirth(treeRef.current, x.name)} />
+
+      <div className="w-full h-full">
+        <svg className="w-full h-full" ref={svgRef}>
+          <g transform={transform.toString()}>
             {layout?.edges?.map(e => (
               <EdgeComp key={e.id} edge={e} inParent={layout as Rect} />
             ))}
@@ -285,9 +297,9 @@ export default function Index(): JSX.Element {
                 tree={treeRef.current}
               />
             ))}
-          </svg>
-        </div>
+          </g>
+        </svg>
       </div>
-    </Provider>
+    </div>
   )
 }
