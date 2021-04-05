@@ -1,29 +1,25 @@
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import * as Y from 'yjs'
 import { IndexeddbPersistence } from "y-indexeddb"
-import { animated, Interpolation, to, useSpring } from "react-spring"
 import ELK, { ElkEdge, ElkEdgeSection, ElkLabel, ElkNode, ElkPoint } from "elkjs/lib/elk.bundled.js"
 import { ArrowOptions, getBoxToBoxArrow } from "perfect-arrows"
 import { atom, useAtom } from "jotai"
-import { line } from "d3-shape";
-import { interpolatePath } from "d3-interpolate-path"
-import { zoom, zoomIdentity } from "d3-zoom";
-import { select } from "d3-selection";
-import { useGesture } from "react-use-gesture";
+import Konva from "konva";
+import { Arrow, Circle, Group, Layer, Line, Rect, Stage, Text } from "react-konva";
 
 import { toELK } from "../lib/layout"
 import { giveBirth, makeChild, marry } from "../lib/modification"
 import { FamilyTree, PersonID } from "../lib/types"
 
-interface Rect {
+interface RectT {
   x: number
   y: number
   width: number
   height: number
 }
 
-const addParent = (parent: Rect, child: Rect): Rect => (
+const addParent = (parent: RectT, child: RectT): RectT => (
   {
     x: parent.x + child.x,
     y: parent.y + child.y,
@@ -34,155 +30,150 @@ const addParent = (parent: Rect, child: Rect): Rect => (
 
 const Label = ({ label, rect }: {
   label: ElkLabel
-  rect: Rect
+  rect: RectT
 }) => {
-  const spring = useSpring(rect)
-
   return (
-    <animated.text
-      {...spring}
+    <Text
+      {...rect}
+      id={label.id}
       dominantBaseline="text-before-edge"
       fontFamily="Arial, sans-serif"
-      fontSize="16px"
+      fontSize={16}
       pointerEvents="none"
-    >
-      {label.text}
-    </animated.text>
+      text={label.text}
+    />
   )
 }
 
 type Vector2 = [x: number, y: number]
 
-const boxToPoint = ({ x, y, width, height }: Rect, [px, py]: Vector2, options?: ArrowOptions): number[] =>
+const boxToPoint = ({ x, y, width, height }: RectT, [px, py]: Vector2, options?: ArrowOptions): number[] =>
   getBoxToBoxArrow(x, y, width, height, px, py, 1, 1, options)
 
 const PerfectArrow = ({ rect, point }: {
-  rect: Rect
+  rect: RectT
   point: Vector2
 }): JSX.Element => {
   const [sx, sy, cx, cy, ex, ey, ae, as, ec] = boxToPoint(rect, point, {
-    bow: 0.2,
-    stretch: 0.5,
-    stretchMin: 40,
-    stretchMax: 420,
     padStart: 0,
-    padEnd: 20,
-    flip: false,
-    straights: true,
+    padEnd: 1,
   })
 
-  const endAngleAsDegrees = ae * (180 / Math.PI)
-
   return (
-    <g
-      stroke="#000"
-      fill="#000"
-      strokeWidth={3}
-    >
-      <circle cx={sx} cy={sy} r={4} />
-      <path d={`M${sx},${sy} Q${cx},${cy} ${ex},${ey}`} fill="none" />
-      <polygon
-        points="0,-6 12,0, 0,6"
-        transform={`translate(${ex},${ey}) rotate(${endAngleAsDegrees})`}
-      />
-    </g>
+    <Arrow
+      points={[sx, sy, cx, cy, ex, ey]}
+      tension={0.5}
+
+      fill="none"
+      stroke="black"
+    />
   )
 }
 
 const hoveringAtom = atom<PersonID | undefined>(undefined)
+const selectedAtom = atom<PersonID | undefined>(undefined)
 
-const ortho = line<ElkPoint>(({ x }) => x, ({ y }) => y)
+const push = (arr: number[], point: ElkPoint) =>
+  arr.push(point.x, point.y)
 
-const useInterpolatePath = (d: string): Interpolation<string> => {
-  const prev = useRef(d)
-  const interpolator = useMemo(() => interpolatePath(prev.current, d), [d])
-
-  const spring = useSpring({
-    from: { t: 0 },
-    to: { t: 1 },
-    reset: d !== prev.current,
-  })
-
-  prev.current = d
-
-  return to(spring.t, interpolator)
-}
-
-const EdgeComp = React.memo(({ edge, inParent }: {
-  edge: ElkEdge,
-  inParent: Rect,
-}): JSX.Element => {
+const points = (edge: ElkEdge): number[] => {
 
   // @ts-ignore sections
   const sections: ElkEdgeSection[] = edge.sections
 
-  const d = ortho(
-    sections.reduce((acc, { startPoint, bendPoints, endPoint }) => {
-      acc.push(startPoint)
-      bendPoints?.forEach(x => acc.push(x))
-      acc.push(endPoint)
-      return acc
-    }, Array<ElkPoint>())
-  )
-  if (!d) throw Error()
+  return sections.reduce((acc, { startPoint, bendPoints, endPoint }) => {
+    acc.push(startPoint.x, startPoint.y)
+    push(acc, startPoint)
+    bendPoints?.forEach(x => push(acc, x))
+    push(acc, endPoint)
+    return acc
+  }, Array<number>())
+}
 
-  const animatedD = useInterpolatePath(d)
-
+const EdgeComp = ({ edge, inParent }: {
+  edge: ElkEdge,
+  inParent: RectT,
+}): JSX.Element => {
   return (
-    <animated.path fill="none" stroke="black" d={animatedD} />
+    <Line
+      id={edge.id}
+      fill="none"
+      stroke="black"
+      points={points(edge)}
+    />
   )
-})
+}
 
-const Person = React.memo(({ person, inParent, tree }: {
+const scaledPointerPos = (stage: Konva.Stage): ElkPoint | undefined => {
+  const pointerPosition = stage.pointerPos
+  if (!pointerPosition) return undefined
+
+  return {
+    x: (pointerPosition.x - stage.x()) / stage.scaleX(),
+    y: (pointerPosition.y - stage.y()) / stage.scaleY(),
+  }
+};
+
+const Person = ({ person, inParent, tree }: {
   person: ElkNode,
-  inParent: Rect,
+  inParent: RectT,
   tree: FamilyTree,
 }): JSX.Element => {
 
   const [hovering, setHovering] = useAtom(hoveringAtom)
   const [arrow, setArrow] = useState<Vector2 | null>(null)
 
-  const spring = useSpring(inParent)
-
-  const gestures = useGesture({
-    onHover: ({ hovering }) => {
-      setHovering(hovering ? person.id : undefined)
-    },
-    onDrag: ({ xy: [x, y], event: { target }, tap }) => {
-      if (tap) return
-
-      const svgRect = target as SVGElement
-      const { offsetLeft, offsetTop } = svgRect.ownerSVGElement!.parentElement!
-      setArrow([x - offsetLeft, y - offsetTop])
-
-      const el = document.elementFromPoint(x, y)?.parentNode as SVGElement
-      setHovering(el?.dataset?.['id'])
-    },
-    onDragEnd: ({ xy: [x, y] }) => {
-      setArrow(null)
-      const el = document.elementFromPoint(x, y)?.parentNode as SVGElement
-      const targetID = el?.dataset?.['id']
-      if (targetID) {
-        if (targetID.includes(':')) {
-          makeChild(tree, person.id, targetID)
-        } else {
-          marry(tree, person.id, targetID)
-        }
-      }
-    },
-  })
-
-  const isHovering = hovering == person.id
+  const isHovering = hovering === person.id
 
   return (
-    <g>
-      <g
-        {...gestures()}
+    <>
+      <Group
+        id={person.id}
         cursor="pointer"
-        data-id={person.id}
+        {...inParent}
+        offsetX={inParent.x}
+        offsetY={inParent.y}
+
+        onMouseEnter={() => {
+          setHovering(person.id)
+        }}
+        onMouseLeave={() => {
+          setHovering(undefined)
+        }}
+
+        draggable={true}
+        dragBoundFunc={function () {
+          return this.absolutePosition();
+        }}
+        onDragMove={({ target }) => {
+          const stage = target.getStage()
+          if (!stage) throw Error()
+
+          const xy = scaledPointerPos(stage)
+          if (!xy) return
+
+          setArrow([xy.x, xy.y])
+
+          const layer = target.getLayer()
+          setHovering(layer?.getIntersection(stage.pointerPos!, "Group")?.id())
+        }}
+        onDragEnd={({ target }) => {
+          setArrow(null)
+
+          const stage = target.getStage()
+          const layer = target.getLayer()
+          const targetID = layer?.getIntersection(stage!.pointerPos!, "Group")?.id()
+          if (targetID) {
+            if (targetID.includes(':')) {
+              makeChild(tree, person.id, targetID)
+            } else {
+              marry(tree, person.id, targetID)
+            }
+          }
+        }}
       >
-        <animated.rect
-          {...spring}
+        <Rect
+          {...inParent}
           fill="transparent"
           stroke={isHovering ? "blue" : "black"}
           strokeWidth={2}
@@ -192,26 +183,15 @@ const Person = React.memo(({ person, inParent, tree }: {
         {person.labels?.map(label => (
           <Label
             key={label.text}
-            rect={addParent(inParent, label as Rect)}
+            rect={addParent(inParent, label as RectT)}
             label={label}
           />
         ))}
 
         {isHovering && (
-          <g
-            stroke="currentColor"
-            fill="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            transform={`translate(${inParent.x + inParent.width / 2 - 12}, ${inParent.y - 12})`}
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="16 12 12 8 8 12" />
-            <line x1="12" y1="16" x2="12" y2="8" />
-          </g>
+          <Circle radius={2} />
         )}
-      </g>
+      </Group>
 
       {arrow && (
         <PerfectArrow
@@ -219,9 +199,9 @@ const Person = React.memo(({ person, inParent, tree }: {
           point={arrow}
         />
       )}
-    </g>
+    </>
   )
-})
+}
 
 interface FormValues {
   name: string
@@ -241,10 +221,15 @@ const NewPerson = ({ submit }: { submit: (x: FormValues) => void }): JSX.Element
   )
 };
 
+const defaultWheelDelta = (event: WheelEvent) =>
+  -event.deltaY * (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002) * (event.ctrlKey ? 10 : 1)
+
 // noinspection JSUnusedGlobalSymbols
 export default function Index(): JSX.Element {
   const treeRef = useRef<FamilyTree>({} as FamilyTree)
   const [layout, setLayout] = useState<ElkNode | null>(null)
+
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const doc = new Y.Doc()
@@ -260,8 +245,7 @@ export default function Index(): JSX.Element {
 
     const elk = new ELK()
     const onDocChange = async () => {
-      const layouted = await elk.layout(toELK(tree))
-      setLayout(layouted)
+      setLayout(await elk.layout(toELK(tree)))
     };
     doc.on('update', onDocChange)
     return () => {
@@ -269,36 +253,49 @@ export default function Index(): JSX.Element {
     }
   }, [])
 
-  const [transform, setTransform] = useState(zoomIdentity)
-  const svgRef = useRef<SVGSVGElement>(null)
-  useEffect(() => {
-    select(svgRef.current as Element)
-      .call(
-        zoom().on('zoom', ({ transform }) => setTransform(transform))
-      )
-  }, [])
-
   return (
     <div className="flex flex-col h-screen">
       <NewPerson submit={x => giveBirth(treeRef.current, x.name)} />
 
-      <div className="w-full h-full">
-        <svg className="w-full h-full" ref={svgRef}>
-          <g transform={transform.toString()}>
+      <div className="w-full h-full" ref={containerRef}>
+        <Stage
+          width={containerRef.current?.clientWidth}
+          height={containerRef.current?.clientHeight}
+          draggable={true}
+          onWheel={({ evt, target }) => {
+            const stage = target as Konva.Stage
+            evt.preventDefault();
+
+            const oldScale = stage.scaleX();
+            const newScale = Math.max(oldScale + defaultWheelDelta(evt), 0.1)
+
+            const unscaledPointer = stage.pointerPos
+            const scaledPointer = scaledPointerPos(stage)
+            if (!scaledPointer || !unscaledPointer) return
+
+            stage.scale({ x: newScale, y: newScale });
+            stage.position({
+              x: unscaledPointer.x - scaledPointer.x * newScale,
+              y: unscaledPointer.y - scaledPointer.y * newScale,
+            });
+            stage.batchDraw()
+          }}
+        >
+          <Layer>
             {layout?.edges?.map(e => (
-              <EdgeComp key={e.id} edge={e} inParent={layout as Rect} />
+              <EdgeComp key={e.id} edge={e} inParent={layout as RectT} />
             ))}
 
             {layout?.children?.map(p => (
               <Person
                 key={p.id}
                 person={p}
-                inParent={addParent(layout as Rect, p as Rect)}
+                inParent={addParent(layout as RectT, p as RectT)}
                 tree={treeRef.current}
               />
             ))}
-          </g>
-        </svg>
+          </Layer>
+        </Stage>
       </div>
     </div>
   )
