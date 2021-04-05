@@ -5,26 +5,15 @@ import { IndexeddbPersistence } from "y-indexeddb"
 import ELK, { ElkEdge, ElkEdgeSection, ElkLabel, ElkNode } from "elkjs/lib/elk.bundled.js"
 import { ArrowOptions, getBoxToBoxArrow } from "perfect-arrows"
 import { atom, useAtom } from "jotai"
-import Konva from "konva";
-import { Arrow, Circle, Group, Layer, Line, Rect, Stage, Text } from "react-konva";
+import Konva from "konva"
+import { Arrow, Circle, Group, Layer, Line, Rect, Stage, Text } from "react-konva"
 
 import { toELK } from "../lib/layout"
 import { giveBirth, makeChild, marry } from "../lib/modification"
 import { FamilyTree, PersonID } from "../lib/types"
+import { containsObj, PointObj, rectArea, RectObj } from "../lib/geometry";
 
-interface RectObj {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-interface PointObj {
-  x: number
-  y: number
-}
-
-const addParent = (parent: RectObj, child: RectObj): RectObj => (
+const rectInParent = (parent: RectObj, child: RectObj): RectObj => (
   {
     x: parent.x + child.x,
     y: parent.y + child.y,
@@ -93,13 +82,37 @@ const points = (edge: ElkEdge): number[] => {
   }, Array<number>())
 }
 
+interface RecMin {
+  id?: PersonID,
+  area: number,
+}
+
+const findIntersectionRec = (rect: RectObj, node: ElkNode, p: PointObj, min: RecMin): void => {
+  node.children?.forEach(c => {
+    const childRect = rectInParent(rect, c as RectObj)
+
+    if (containsObj(childRect, p)) {
+      const area = rectArea(c as RectObj)
+      if (area < min.area) {
+        min.area = area
+        min.id = c.id
+      }
+
+      findIntersectionRec(childRect, c, p, min)
+    }
+  })
+}
+
+const findIntersection = (node: ElkNode, p: PointObj): PersonID | undefined => {
+  const min: RecMin = { area: Number.MAX_SAFE_INTEGER }
+  findIntersectionRec(node as RectObj, node, p, min)
+  return min.id
+}
+
 const EdgeComp = ({ edge, inParent }: {
   edge: ElkEdge,
   inParent: RectObj,
 }): JSX.Element => {
-
-  console.log('edge')
-
   return (
     <Line
       id={edge.id}
@@ -120,10 +133,17 @@ const worldPointerPos = (stage: Konva.Stage): PointObj | undefined => {
   }
 };
 
-const Person = ({ person, inParent, tree }: {
+const dragBoundFunc = function (this: Konva.Node) {
+  return this.absolutePosition();
+}
+
+// Konva.hitOnDragEnabled = true
+
+const Person = ({ person, inParent, tree, layout }: {
   person: ElkNode,
   inParent: RectObj,
   tree: FamilyTree,
+  layout: ElkNode
 }): JSX.Element => {
 
   const [hovering, setHovering] = useAtom(hoveringAtom)
@@ -145,19 +165,15 @@ const Person = ({ person, inParent, tree }: {
 
         draggable={true}
         hitOnDragEnabled={true}
-        dragBoundFunc={function () {
-          return this.absolutePosition();
-        }}
+        dragBoundFunc={dragBoundFunc}
         onDragMove={({ target }) => {
           const stage = target.getStage()
-          if (!stage) throw Error()
-
+          if (!stage) return
           const world = worldPointerPos(stage)
           if (!world) return
 
           setArrowEnd(world)
-
-          setHovering(target.getLayer()?.getIntersection(stage.pointerPos!, "Group")?.id())
+          setHovering(findIntersection(layout, stage.pointerPos!))
         }}
         onDragEnd={({ target }) => {
           setArrowEnd(null)
@@ -185,7 +201,7 @@ const Person = ({ person, inParent, tree }: {
         {person.labels?.map(label => (
           <Label
             key={label.text}
-            rect={addParent(inParent, label as RectObj)}
+            rect={rectInParent(inParent, label as RectObj)}
             label={label}
           />
         ))}
@@ -300,8 +316,9 @@ export default function Index(): JSX.Element {
               <Person
                 key={p.id}
                 person={p}
-                inParent={addParent(layout as RectObj, p as RectObj)}
+                inParent={rectInParent(layout as RectObj, p as RectObj)}
                 tree={treeRef.current}
+                layout={layout}
               />
             ))}
           </Layer>
