@@ -30,10 +30,10 @@ const Label = ({ label, rect }: {
     <Text
       {...rect}
       id={label.id}
-      dominantBaseline="text-before-edge"
+      verticalAlign="middle"
+      align="center"
       fontFamily="Arial, sans-serif"
-      fontSize={16}
-      pointerEvents="none"
+      fontSize={15}
       text={label.text}
     />
   )
@@ -133,11 +133,11 @@ const worldPointerPos = (stage: Konva.Stage): PointObj | undefined => {
   }
 };
 
-const dragBoundFunc = function (this: Konva.Node) {
-  return this.absolutePosition();
+const dragDoesntMove = function (this: Konva.Node) {
+  return this.absolutePosition()
 }
 
-// Konva.hitOnDragEnabled = true
+Konva.hitOnDragEnabled = true
 
 const Person = ({ person, inParent, tree, layout }: {
   person: ElkNode,
@@ -155,7 +155,7 @@ const Person = ({ person, inParent, tree, layout }: {
     <>
       <Group
         id={person.id}
-        cursor="pointer"
+
         {...inParent}
         offsetX={inParent.x}
         offsetY={inParent.y}
@@ -164,23 +164,21 @@ const Person = ({ person, inParent, tree, layout }: {
         onMouseLeave={() => setHovering(undefined)}
 
         draggable={true}
-        hitOnDragEnabled={true}
-        dragBoundFunc={dragBoundFunc}
+        dragBoundFunc={dragDoesntMove}
         onDragMove={({ target }) => {
           const stage = target.getStage()
           if (!stage) return
           const world = worldPointerPos(stage)
           if (!world) return
-
           setArrowEnd(world)
-          setHovering(findIntersection(layout, stage.pointerPos!))
         }}
         onDragEnd={({ target }) => {
           setArrowEnd(null)
 
           const stage = target.getStage()
-          const layer = target.getLayer()
-          const targetID = layer?.getIntersection(stage!.pointerPos!, "Group")?.id()
+          if (!stage) return
+
+          const targetID = findIntersection(layout, stage.pointerPos!)
           if (targetID) {
             if (targetID.includes(':')) {
               makeChild(tree, person.id, targetID)
@@ -206,13 +204,12 @@ const Person = ({ person, inParent, tree, layout }: {
           />
         ))}
 
-        {isHovering && (
-          <Circle
-            {...inParent}
-            radius={10}
-            stroke="black"
-          />
-        )}
+        <Circle
+          {...inParent}
+          radius={10}
+          stroke="black"
+          visible={isHovering}
+        />
       </Group>
 
       {arrowEnd && (
