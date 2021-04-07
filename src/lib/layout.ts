@@ -88,7 +88,5 @@ export const toELK = ({ people, families }: FamilyTree): ElkNode => {
     root.edges?.push(...familyEdges(f))
   })
 
-  console.log(root)
-
   return root
 }

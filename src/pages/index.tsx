@@ -14,7 +14,7 @@ import { useGesture } from "react-use-gesture";
 
 import { toELK } from "../lib/layout"
 import { giveBirth, makeChild, marry } from "../lib/modification"
-import { FamilyTree, PersonID } from "../lib/types"
+import { FamilyTree } from "../lib/types"
 
 interface Rect {
   x: number
@@ -89,8 +89,6 @@ const PerfectArrow = ({ rect, point }: {
   )
 }
 
-const hoveringAtom = atom<PersonID | undefined>(undefined)
-
 const ortho = line<ElkPoint>(({ x }) => x, ({ y }) => y)
 
 const useInterpolatePath = (d: string): Interpolation<string> => {
@@ -161,21 +159,20 @@ const Person = ({ person, inParent, tree }: {
   tree: FamilyTree,
 }): JSX.Element => {
 
-  const [hovering, setHovering] = useAtom(hoveringAtom)
+  const [hovering, setHovering] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [arrow, setArrow] = useState<Vector2 | null>(null)
 
   // TODO should be a ref
   const [transform] = useAtom(zoomAtom)
 
-  const [arrow, setArrow] = useState<Vector2 | null>(null)
-
   const spring = useSpring(inParent)
 
   const gestures = useGesture({
-    onHover: ({ hovering }) => {
-      setHovering(hovering ? person.id : undefined)
-    },
+    onHover: ({ hovering }) => setHovering(hovering),
     onDragStart: ({ event }) => {
       event.preventDefault()
+      setDragging(true)
     },
     onDrag: ({ xy: [x, y], event: { target }, tap }) => {
       if (tap) return
@@ -184,10 +181,11 @@ const Person = ({ person, inParent, tree }: {
       const { offsetLeft, offsetTop } = svgRect.ownerSVGElement!.parentElement!
       setArrow(transform.invert([x - offsetLeft, y - offsetTop]))
 
-      const el = document.elementFromPoint(x, y)?.parentNode as SVGElement
-      setHovering(el?.dataset?.['id'])
+      // const el = document.elementFromPoint(x, y)?.parentNode as SVGElement
+      // setHovering(el?.dataset?.['id'])
     },
     onDragEnd: ({ xy: [x, y] }) => {
+      setDragging(false)
       setArrow(null)
       const el = document.elementFromPoint(x, y)?.parentNode as SVGElement
       const targetID = el?.dataset?.['id']
@@ -201,7 +199,7 @@ const Person = ({ person, inParent, tree }: {
     },
   })
 
-  const isHovering = hovering === person.id
+  const isHovering = hovering
 
   return (
     <g>
@@ -209,6 +207,7 @@ const Person = ({ person, inParent, tree }: {
         {...gestures()}
         cursor="pointer"
         data-id={person.id}
+        pointerEvents={dragging ? "none" : undefined}
       >
         <animated.rect
           {...spring}
