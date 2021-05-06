@@ -1,12 +1,34 @@
-import calculateSize from 'calculate-size';
 import { ElkEdge, ElkLabel, ElkNode } from 'elkjs/lib/elk.bundled.js'
 
-import { Family, FamilyTree, Person } from "./types";
+import { Family, FamilyTree, Person } from "../app/types";
+import { measureText } from "./text";
+
+type EdgeRouting =
+  | 'UNDEFINED'
+  | 'POLYLINE'
+  | 'ORTHOGONAL'
+  | 'SPLINES'
+
+type NodePlacementStrategy =
+  | 'SIMPLE'
+  | 'INTERACTIVE'
+  | 'LINEAR_SEGMENTS'
+  | 'BRANDES_KOEPF'
+  | 'NETWORK_SIMPLEX'
+
+type CycleBreakingStrategy =
+  | "GREEDY"
+  | "DEPTH_FIRST"
+  | "INTERACTIVE"
+
+const EDGE_ROUTING: EdgeRouting = "POLYLINE"
+const NODE_PLACEMENT_STRATEGY: NodePlacementStrategy = "LINEAR_SEGMENTS"
+const CYCLE_BREAKING_STRATEGY: CycleBreakingStrategy = "GREEDY"
 
 const measuredLabel = (text: string): ElkLabel => (
   {
     text,
-    ...calculateSize(text, {
+    ...measureText(text, {
       font: "Arial, sans-serif",
       fontSize: "16px",
     }),
@@ -74,7 +96,7 @@ export const toELK = ({ people, families }: FamilyTree): ElkNode => {
     edges: [],
     layoutOptions: {
       'org.eclipse.elk.direction': "DOWN",
-      'org.eclipse.elk.layered.nodePlacement.strategy': 'LINEAR_SEGMENTS',
+      'org.eclipse.elk.layered.nodePlacement.strategy': NODE_PLACEMENT_STRATEGY,
     },
   }
 
@@ -87,8 +109,6 @@ export const toELK = ({ people, families }: FamilyTree): ElkNode => {
     root.children?.push(familyNode(f))
     root.edges?.push(...familyEdges(f))
   })
-
-  console.log(root)
 
   return root
 }

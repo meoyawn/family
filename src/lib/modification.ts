@@ -1,4 +1,4 @@
-import { FamilyID, FamilyTree, PersonID } from "./types";
+import { FamilyID, FamilyTree, PersonID } from "../app/types";
 
 export const marry = ({ people, families }: FamilyTree, p1: PersonID, p2: PersonID) => {
   if (p1 === p2) return
@@ -53,7 +53,7 @@ export const giveBirth = ({ people, families }: FamilyTree, name: string, fid?: 
   })
 }
 
-export const makeChild = ({ people, families }: FamilyTree, pid: PersonID, fid: FamilyID) => {
+export const makeChild = ({ families }: FamilyTree, pid: PersonID, fid: FamilyID): void => {
   const family = families.get(fid)
   if (!family) return
   if (family.children.includes(pid)) return

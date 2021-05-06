@@ -1,6 +1,6 @@
 import React from "react"
 
-import SEO from "../components/SEO";
+import SEO from "../lib/components/SEO";
 
 // noinspection JSUnusedGlobalSymbols
 export default function NotFound(): JSX.Element {
