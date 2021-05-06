@@ -5,7 +5,6 @@ import { IndexeddbPersistence } from "y-indexeddb"
 import { animated, Interpolation, to, useSpring } from "react-spring"
 import ELK, { ElkEdge, ElkEdgeSection, ElkLabel, ElkNode, ElkPoint } from "elkjs/lib/elk.bundled.js"
 import { ArrowOptions, getBoxToBoxArrow } from "perfect-arrows"
-import { atom, useAtom } from "jotai"
 import { line } from "d3-shape";
 import { interpolatePath } from "d3-interpolate-path"
 import { zoom, zoomIdentity } from "d3-zoom";
@@ -132,17 +131,22 @@ const EdgeComp = ({ edge, inParent }: {
   )
 }
 
-const zoomAtom = atom(zoomIdentity)
+const globalState = {
+  zoom: zoomIdentity,
+}
 
 const ZoomingGroup = ({ children }: { children: ReactNode }) => {
   const ref = useRef<SVGGElement | null>(null)
-  const [transform, setTransform] = useAtom(zoomAtom)
+  const [transform, setTransform] = useState(zoomIdentity)
 
   useEffect(() => {
     select(ref.current?.ownerSVGElement as Element)
       .call(
         zoom()
-          .on('zoom', ({ transform }) => setTransform(transform))
+          .on('zoom', ({ transform }) => {
+            globalState.zoom = transform
+            setTransform(transform);
+          })
       )
   }, [])
 
@@ -163,23 +167,20 @@ const Person = ({ person, inParent, tree }: {
   const [dragging, setDragging] = useState(false)
   const [arrow, setArrow] = useState<Vector2 | null>(null)
 
-  // TODO should be a ref
-  const [transform] = useAtom(zoomAtom)
-
   const spring = useSpring(inParent)
 
   const gestures = useGesture({
-    onHover: ({ hovering }) => setHovering(hovering),
     onDragStart: ({ event }) => {
       event.preventDefault()
       setDragging(true)
+      setHovering(false)
     },
     onDrag: ({ xy: [x, y], event: { target }, tap }) => {
       if (tap) return
 
       const svgRect = target as SVGElement
       const { offsetLeft, offsetTop } = svgRect.ownerSVGElement!.parentElement!
-      setArrow(transform.invert([x - offsetLeft, y - offsetTop]))
+      setArrow(globalState.zoom.invert([x - offsetLeft, y - offsetTop]))
 
       // const el = document.elementFromPoint(x, y)?.parentNode as SVGElement
       // setHovering(el?.dataset?.['id'])
@@ -208,6 +209,9 @@ const Person = ({ person, inParent, tree }: {
         cursor="pointer"
         data-id={person.id}
         pointerEvents={dragging ? "none" : undefined}
+
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
       >
         <animated.rect
           {...spring}
