@@ -1,7 +1,7 @@
-import calculateSize from 'calculate-size';
 import { ElkEdge, ElkLabel, ElkNode } from 'elkjs/lib/elk.bundled.js'
 
-import { Family, FamilyTree, Person } from "./types";
+import { Family, FamilyTree, Person } from "../app/types";
+import { measureText } from "./text";
 
 type EdgeRouting =
   | 'UNDEFINED'
@@ -28,7 +28,7 @@ const CYCLE_BREAKING_STRATEGY: CycleBreakingStrategy = "GREEDY"
 const measuredLabel = (text: string): ElkLabel => (
   {
     text,
-    ...calculateSize(text, {
+    ...measureText(text, {
       font: "Arial, sans-serif",
       fontSize: "16px",
     }),
