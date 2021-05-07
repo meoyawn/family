@@ -1,11 +1,27 @@
 import React from "react"
-import { Layer } from "react-konva"
+import { Layer, Line } from "react-konva"
+import Konva from 'konva'
 
-import { useStore } from "../store"
+import { arrowEndSelector, arrowStartSelector, useStore } from "../store"
 import { dragTransform, stayInPlace, wheelTransform } from "../../lib/konva"
 import InfiniteGrid from "./InfiniteGrid"
 import { ResizingStage } from "./ResizingStage"
 import Graph from "./Graph"
+
+Konva.hitOnDragEnabled = true
+
+const Arrows = () => {
+  const start = useStore(arrowStartSelector)
+  const end = useStore(arrowEndSelector)
+
+  return start && end ? (
+    <Line
+      points={start.concat(end)}
+      stroke="black"
+      listening={false}
+    />
+  ) : null
+}
 
 export const Canvas = (): JSX.Element => (
   <ResizingStage
@@ -24,8 +40,8 @@ export const Canvas = (): JSX.Element => (
   >
     <Layer>
       <InfiniteGrid />
-
       <Graph />
+      <Arrows />
     </Layer>
   </ResizingStage>
 )

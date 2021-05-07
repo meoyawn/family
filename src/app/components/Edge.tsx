@@ -4,10 +4,12 @@ import { Line } from "react-konva";
 
 import { getPoints } from "../../lib/elk";
 
-export default function Edge({ edge }: {
+export const Edge = ({ edge }: {
   edge: ElkEdge
-}): JSX.Element {
-  return (
-    <Line points={getPoints(edge) ?? []} />
-  )
-}
+}): JSX.Element => (
+  <Line
+    points={getPoints(edge) ?? []}
+    stroke="black"
+    strokeWidth={1}
+  />
+)

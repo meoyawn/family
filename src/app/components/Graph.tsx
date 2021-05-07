@@ -3,7 +3,7 @@ import React from "react";
 import Person from "./Person";
 import { ZoomingGroup } from "./ZoomingGroup";
 import { rootSelector, useStore } from "../store";
-import Edge from "./Edge";
+import { Edge } from "./Edge";
 
 export default function Graph(): JSX.Element {
   const root = useStore(rootSelector)

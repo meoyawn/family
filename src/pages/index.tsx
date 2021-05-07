@@ -1,74 +1,15 @@
 import React, { useEffect, useMemo, useRef } from "react"
 import * as Y from "yjs";
 import { IndexeddbPersistence } from "y-indexeddb";
-import ELK, { ElkNode } from "elkjs/lib/elk.bundled";
-import { ZoomTransform } from "d3-zoom";
+import ELK from "elkjs/lib/elk.bundled";
 
-import { editingSelector, rootSelector, transformSelector, useStore } from "../app/store";
+import { editingSelector, rootSelector, useStore } from "../app/store";
 import { FamilyTree } from "../app/types";
 import { toELK } from "../lib/layout";
 import { Canvas } from "../app/components/Canvas";
-import { changeName, giveBirth } from "../app/modification";
+import { giveBirth } from "../app/modification";
 import { elkBFS } from "../lib/elk";
-import { FONT_SIZE, LINE_HEIGHT } from "../app/font";
-
-const selectElementContents = (el: Element) => {
-  const range = document.createRange()
-  range.selectNodeContents(el)
-
-  const sel = window.getSelection()
-  sel?.removeAllRanges()
-  sel?.addRange(range)
-}
-
-const toCSS = ({ x, y, k }: ZoomTransform): string =>
-  `translate(${x}px, ${y}px) scale(${k})`
-
-const toTransformOrigin = ({ x, y }: ElkNode): string =>
-  `-${x}px -${y}px`
-
-const Editor = ({ node }: {
-  node: ElkNode
-}) => {
-
-  const transform = useStore(transformSelector)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const text = node.labels?.[0]?.text
-
-    if (!ref.current) throw Error(text)
-
-    ref.current.innerText = text ?? ""
-    ref.current.focus()
-    selectElementContents(ref.current)
-  }, [node])
-
-  return (
-    <div
-      ref={ref}
-      className="absolute focus:outline-none text-center bg-white rounded-sm table-cell align-middle"
-      contentEditable={true}
-      role="textbox"
-      style={{
-        left: node.x,
-        top: node.y,
-        width: node.width,
-        height: node.height,
-
-        transformOrigin: toTransformOrigin(node),
-        transform: toCSS(transform),
-        fontSize: `${FONT_SIZE}px`,
-        lineHeight: LINE_HEIGHT,
-      }}
-      onBlur={({ target }) => {
-        const { tree } = useStore.getState()
-        changeName(tree, node.id, target.innerText)
-        useStore.setState({ editing: undefined })
-      }}
-    />
-  )
-}
+import { Editor } from "../app/components/Editor";
 
 const Editing = (): JSX.Element | null => {
   const editing = useStore(editingSelector)

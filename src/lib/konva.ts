@@ -61,6 +61,6 @@ export const dragTransform = ({ get, set }: {
     }
   }
 
-export function stayInPlace<T extends Konva.Node>(this: T): Konva.Vector2d {
-  return this.absolutePosition()
+export function stayInPlace(this: Konva.Node): Konva.Vector2d {
+  return this.getAbsolutePosition()
 }
