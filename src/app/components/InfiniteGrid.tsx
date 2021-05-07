@@ -75,8 +75,8 @@ export default function InfiniteGrid(): JSX.Element {
       xScale={scaleX}
       yScale={scaleY}
 
-      numTicksColumns={12}
-      numTicksRows={12 * k}
+      numTicksColumns={10}
+      numTicksRows={10 * k}
 
       stroke="black"
       opacity={0.1}

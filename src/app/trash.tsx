@@ -4,7 +4,7 @@ import { Text } from "react-konva";
 import React, { useMemo, useState } from "react";
 
 import { FamilyTree } from "./types";
-import { makeChild, marry } from "../lib/modification";
+import { makeChild, marry } from "./modification";
 
 const Label = ({ label, rect }: {
   label: ElkLabel

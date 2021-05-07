@@ -3,7 +3,7 @@ interface Size {
   height: number
 }
 
-let el: HTMLElement
+let el: HTMLSpanElement
 
 const cache: Partial<Record<string, Size>> = {}
 

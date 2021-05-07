@@ -6,9 +6,11 @@ import { FamilyTree, PersonID } from "./types"
 
 interface State {
   tree: FamilyTree
+  transform: ZoomTransform
+
   root?: ElkNode
   editing?: PersonID
-  transform: ZoomTransform
+  selected?: PersonID
 }
 
 export const useStore = create<State>(() => ({
@@ -21,3 +23,6 @@ export const rootSelector = (s: State): ElkNode | undefined =>
 
 export const transformSelector = (s: State): ZoomTransform =>
   s.transform
+
+export const editingSelector = (s: State): PersonID | undefined =>
+  s.editing
