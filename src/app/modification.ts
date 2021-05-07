@@ -64,6 +64,36 @@ export const changeName = ({ people }: FamilyTree, pid: PersonID, name: string):
   })
 }
 
+export const deleteStuff = ({ people, families }: FamilyTree, del: Set<string>): void => {
+  if (!del.size) return
+
+  people.doc?.transact(() => {
+    del.forEach(id => {
+      if (id.includes(":")) {
+        people.forEach(p => {
+          if (p.marriages.includes(id)) {
+            people.set(p.id, {
+              ...p,
+              marriages: p.marriages.filter(x => x !== id),
+            })
+          }
+        })
+        families.delete(id)
+      } else {
+        families.forEach(f => {
+          if (f.children.includes(id)) {
+            families.set(f.id, {
+              ...f,
+              children: f.children.filter(x => x !== id),
+            })
+          }
+        })
+        people.delete(id)
+      }
+    })
+  })
+}
+
 export const makeChild = ({ families }: FamilyTree, pid: PersonID, fid: FamilyID): void => {
   const family = families.get(fid)
   if (!family) return

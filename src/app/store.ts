@@ -1,17 +1,17 @@
-import { ElkNode } from "elkjs/lib/elk.bundled"
 import create from "zustand"
+import { ElkNode } from "elkjs/lib/elk.bundled"
 import { zoomIdentity, ZoomTransform } from "d3-zoom"
 
-import { FamilyTree, PersonID } from "./types"
+import { FamilyID, FamilyTree, PersonID } from "./types"
 import { PointTuple } from "../lib/geometry"
 
 interface State {
   tree: FamilyTree
   transform: ZoomTransform
+  selected: Set<PersonID | FamilyID>
 
   root?: ElkNode
   editing?: PersonID
-  selected?: PersonID
 
   arrowStart?: PointTuple
   arrowEnd?: PointTuple
@@ -20,6 +20,7 @@ interface State {
 export const useStore = create<State>(() => ({
   tree: {} as FamilyTree,
   transform: zoomIdentity,
+  selected: new Set(),
 }))
 
 export const rootSelector = (s: State): ElkNode | undefined =>

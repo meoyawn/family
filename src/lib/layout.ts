@@ -62,21 +62,23 @@ const personEdges = ({ id, marriages }: Person): ElkEdge[] =>
     targets: [`${fid}.spouses`],
   }))
 
+const smol = 0.000000001
+
 const familyNode = ({ id }: Family): ElkNode => (
   {
     id,
-    width: 24,
-    height: 24,
+    width: smol,
+    height: smol,
     ports: [
       {
         id: `${id}.spouses`,
-        width: 1,
-        height: 1,
+        width: smol,
+        height: smol,
       },
       {
         id: `${id}.children`,
-        width: 1,
-        height: 1,
+        width: smol,
+        height: smol,
       },
     ]
   }
