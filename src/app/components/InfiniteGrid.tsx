@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
 import { ScaleContinuousNumeric, scaleLinear } from "d3-scale";
 import { Group, Line } from "react-konva";
+
 import { transformSelector, useStore } from "../store";
 
-const Grid = ({ xScale, numTicksColumns, width, height, stroke, strokeOpacity, yScale, numTicksRows }: {
+const Grid = ({ xScale, numTicksColumns, width, height, stroke, opacity, yScale, numTicksRows }: {
   xScale: ScaleContinuousNumeric<number, number>
   yScale: ScaleContinuousNumeric<number, number>
 
@@ -14,7 +15,7 @@ const Grid = ({ xScale, numTicksColumns, width, height, stroke, strokeOpacity, y
   numTicksRows: number
 
   stroke: string
-  strokeOpacity: number
+  opacity: number
 }): JSX.Element => (
   <Group>
     {xScale.ticks(numTicksColumns).map((x, i) => (
@@ -22,7 +23,7 @@ const Grid = ({ xScale, numTicksColumns, width, height, stroke, strokeOpacity, y
         key={i}
         points={[xScale(x), 0, xScale(x), height]}
         stroke={stroke}
-        strokeOpacity={strokeOpacity}
+        opacity={opacity}
         listening={false}
       />
     ))}
@@ -32,15 +33,19 @@ const Grid = ({ xScale, numTicksColumns, width, height, stroke, strokeOpacity, y
         key={i + 1000}
         points={[0, yScale(y), width, yScale(y)]}
         stroke={stroke}
-        strokeOpacity={strokeOpacity}
+        opacity={opacity}
         listening={false}
       />
     ))}
   </Group>
 )
 
-export default function InfiniteGrid(): JSX.Element | null {
-  const screen = window.screen
+export default function InfiniteGrid(): JSX.Element {
+
+  const screen = typeof window === 'undefined'
+    ? { width: 1, height: 1 }
+    : window.screen
+
   const k = screen.height / screen.width
 
   const screenX = useMemo(() => (
@@ -74,7 +79,7 @@ export default function InfiniteGrid(): JSX.Element | null {
       numTicksRows={12 * k}
 
       stroke="black"
-      strokeOpacity={0.1}
+      opacity={0.1}
     />
   )
 }

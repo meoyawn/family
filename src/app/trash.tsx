@@ -2,6 +2,7 @@ import { ElkEdge, ElkEdgeSection, ElkLabel, ElkNode, ElkPoint } from "elkjs/lib/
 import { animated, useSpring } from "react-spring";
 import { Text } from "react-konva";
 import React, { useMemo, useState } from "react";
+
 import { FamilyTree } from "./types";
 import { makeChild, marry } from "../lib/modification";
 

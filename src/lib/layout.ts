@@ -2,6 +2,7 @@ import { ElkEdge, ElkLabel, ElkNode } from 'elkjs/lib/elk.bundled.js'
 
 import { Family, FamilyTree, Person } from "../app/types";
 import { measureText } from "./text";
+import { FONT_SIZE, LINE_HEIGHT } from "../app/font";
 
 type EdgeRouting =
   | 'UNDEFINED'
@@ -29,8 +30,8 @@ const measuredLabel = (text: string): ElkLabel => (
   {
     text,
     ...measureText(text, {
-      font: "Arial, sans-serif",
-      fontSize: "16px",
+      fontSize: `${FONT_SIZE}px`,
+      lineHeight: `${LINE_HEIGHT}`,
     }),
   } as ElkLabel
 )

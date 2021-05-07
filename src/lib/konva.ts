@@ -1,52 +1,66 @@
-import Konva from "konva";
+import Konva from "konva"
+import { zoomIdentity, ZoomTransform } from "d3-zoom"
 
-import { PointObj, PointTuple } from "./geometry";
-import { useStore } from "../app/store";
-import { zoomIdentity } from "d3-zoom";
+import { PointObj, PointTuple } from "./geometry"
 
-export const worldPos = (stage: Konva.Stage, screen: PointObj): PointTuple => {
-  const { x, y, scaleX, scaleY } = stage.attrs
+export const worldPos = (t: ZoomTransform, { x, y }: PointObj): PointTuple =>
+  t.invert([x, y])
 
-  return [
-    (screen.x - x) / scaleX,
-    (screen.y - y) / scaleY,
-  ]
-}
+export const screenPos = (t: ZoomTransform, world: PointTuple): PointTuple =>
+  t.apply(world)
 
-export const screenPos = (stage: Konva.Stage, [wx, wy]: PointTuple): PointTuple => {
-  const { x, y, scaleX, scaleY } = stage.attrs
+type Extent = [min: number, max: number]
 
-  return [
-    x + wx * scaleX,
-    y + wy * scaleY,
-  ]
-}
+const clamp = ([min, max]: Extent, n: number) =>
+  Math.max(min, Math.min(max, n))
 
 const defaultWheelDelta = (event: WheelEvent) =>
   -event.deltaY * (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002) * (event.ctrlKey ? 10 : 1)
 
-export const wheelScale = (target: Konva.Node) => ({ evt }: Konva.KonvaEventObject<WheelEvent>): void => {
-  const stage = target as Konva.Stage
-  evt.preventDefault();
+const wheel = (screenPos: PointObj, t: ZoomTransform, extent: Extent, evt: WheelEvent): ZoomTransform => {
+  const [wx, wy] = worldPos(t, screenPos)
 
-  const screen = stage.pointerPos
-  if (!screen) return
+  const newK = clamp(extent, t.k * Math.pow(2, defaultWheelDelta(evt)))
 
-  const [wx, wy] = worldPos(stage, screen)
-  const oldScale = stage.scaleX()
-  const newScale = Math.max(oldScale + defaultWheelDelta(evt), 0.1)
+  return zoomIdentity
+    .translate(
+      screenPos.x - wx * newK,
+      screenPos.y - wy * newK,
+    )
+    .scale(newK)
+}
 
-  const x = screen.x - wx * newScale
-  const y = screen.y - wy * newScale
-  stage.setAttrs({
-    scaleX: newScale,
-    scaleY: newScale,
-    x: screen.x - wx * newScale,
-    y: screen.y - wy * newScale,
-  })
-  stage.batchDraw()
+export const wheelTransform = ({ get, set, extent }: {
+  get: () => ZoomTransform
+  set: (t: ZoomTransform) => void
+  extent: [min: number, max: number]
+}) => ({ evt, target }: Konva.KonvaEventObject<WheelEvent>): void => {
+  evt.preventDefault()
 
-  useStore.setState({
-    transform: zoomIdentity.translate(x, y).scale(newScale),
-  })
+  const stage = target.getStage()
+  if (!stage) return
+
+  const screenPos = stage.getPointerPosition()
+  if (!screenPos) return
+
+  set(
+    wheel(screenPos, get(), extent, evt)
+  )
+}
+
+const drag = (t: ZoomTransform, { movementX, movementY }: MouseEvent): ZoomTransform =>
+  t.translate(movementX / t.k, movementY / t.k)
+
+export const dragTransform = ({ get, set }: {
+  get: () => ZoomTransform,
+  set: (t: ZoomTransform) => void
+}) =>
+  ({ evt, target }: Konva.KonvaEventObject<DragEvent>): void => {
+    if (target instanceof Konva.Stage) {
+      set(drag(get(), evt))
+    }
+  }
+
+export function stayInPlace<T extends Konva.Node>(this: T): Konva.Vector2d {
+  return this.absolutePosition()
 }

@@ -1,24 +1,21 @@
-import React, { useEffect } from "react";
-import { Group, Layer, Stage } from "react-konva";
-import * as Y from "yjs";
-import { IndexeddbPersistence } from "y-indexeddb";
-import ELK from "elkjs/lib/elk.bundled";
-import dynamic from "next/dynamic";
+import React, { useEffect } from "react"
+import { Layer } from "react-konva"
+import * as Y from "yjs"
+import { IndexeddbPersistence } from "y-indexeddb"
+import ELK from "elkjs/lib/elk.bundled"
 
-import { rootSelector, useStore } from "../store";
-import { FamilyTree } from "../types";
-import { toELK } from "../../lib/layout";
-import { giveBirth } from "../../lib/modification";
-import Person from "./Person";
-import { wheelScale } from "../../lib/konva";
+import { useStore } from "../store"
+import { FamilyTree } from "../types"
+import { toELK } from "../../lib/layout"
+import { giveBirth } from "../../lib/modification"
+import { dragTransform, stayInPlace, wheelTransform } from "../../lib/konva"
+import InfiniteGrid from "./InfiniteGrid"
+import { ResizingStage } from "./ResizingStage";
+import Graph from "./Graph"
 
-const InfiniteGrid = dynamic(() => import("./InfiniteGrid"), { ssr: false })
-
-export default function Canvas({ width, height }: {
-  width: number
-  height: number
+export default function Canvas({ parentEl }: {
+  parentEl: () => Element
 }): JSX.Element {
-  const root = useStore(rootSelector)
 
   useEffect(() => {
     const doc = new Y.Doc()
@@ -51,24 +48,27 @@ export default function Canvas({ width, height }: {
   }, [])
 
   return (
-    <Stage
-      width={width}
-      height={height}
+    <ResizingStage
+      parentEl={parentEl}
 
       draggable={true}
-      onWheel={wheelScale}
+      dragBoundFunc={stayInPlace}
+      onDragMove={dragTransform({
+        get: () => useStore.getState().transform,
+        set: transform => useStore.setState({ transform }),
+      })}
+
+      onWheel={wheelTransform({
+        get: () => useStore.getState().transform,
+        set: transform => useStore.setState({ transform }),
+        extent: [0.3, 20],
+      })}
     >
       <Layer>
-        <Group>
-          <InfiniteGrid />
-        </Group>
+        <InfiniteGrid />
 
-        <Group>
-          {root?.children?.map(c => (
-            <Person key={c.id} node={c} />
-          ))}
-        </Group>
+        <Graph />
       </Layer>
-    </Stage>
+    </ResizingStage>
   )
 }

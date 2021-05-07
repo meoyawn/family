@@ -17,9 +17,6 @@ export const measureText = (text: string, style?: Partial<CSSStyleDeclaration>):
   }
 
   el.style.position = "fixed"
-  el.style.lineHeight = "20px"
-  el.style.fontSize = "16px"
-
   Object.assign(el.style, style)
 
   el.innerText = text
