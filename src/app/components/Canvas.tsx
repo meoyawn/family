@@ -1,14 +1,18 @@
 import React, { useEffect } from "react";
-import { Layer, Stage } from "react-konva";
+import { Group, Layer, Stage } from "react-konva";
 import * as Y from "yjs";
 import { IndexeddbPersistence } from "y-indexeddb";
 import ELK from "elkjs/lib/elk.bundled";
+import dynamic from "next/dynamic";
 
 import { rootSelector, useStore } from "../store";
 import { FamilyTree } from "../types";
 import { toELK } from "../../lib/layout";
 import { giveBirth } from "../../lib/modification";
 import Person from "./Person";
+import { wheelScale } from "../../lib/konva";
+
+const InfiniteGrid = dynamic(() => import("./InfiniteGrid"), { ssr: false })
 
 export default function Canvas({ width, height }: {
   width: number
@@ -48,14 +52,22 @@ export default function Canvas({ width, height }: {
 
   return (
     <Stage
-      draggable={true}
       width={width}
       height={height}
+
+      draggable={true}
+      onWheel={wheelScale}
     >
       <Layer>
-        {root?.children?.map(c => (
-          <Person key={c.id} node={c} />
-        ))}
+        <Group>
+          <InfiniteGrid />
+        </Group>
+
+        <Group>
+          {root?.children?.map(c => (
+            <Person key={c.id} node={c} />
+          ))}
+        </Group>
       </Layer>
     </Stage>
   )

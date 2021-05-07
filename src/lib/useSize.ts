@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export type PointTuple = [x: number, y: number]
+import { PointTuple } from "./geometry";
 
 export const useSize = (f: () => Element): PointTuple => {
   const [size, setSize] = useState([0, 0] as PointTuple)
