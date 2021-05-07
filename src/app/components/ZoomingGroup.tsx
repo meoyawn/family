@@ -5,17 +5,21 @@ import { ZoomTransform } from "d3-zoom"
 
 import { transformSelector, useStore } from "../store";
 
+const toKonva = ({ x, y, k }: ZoomTransform): Partial<Konva.NodeConfig> => (
+  {
+    x,
+    y,
+    scaleX: k,
+    scaleY: k,
+  }
+)
+
 export const ZoomingGroup = ({ children }: { children: ReactNode }): JSX.Element => {
   const ref = useRef<Konva.Group>(null)
 
   useEffect(() => {
-    const apply = ({ x, y, k }: ZoomTransform) => {
-      ref.current?.setAttrs({
-        x,
-        y,
-        scaleX: k,
-        scaleY: k,
-      })
+    const apply = (t: ZoomTransform) => {
+      ref.current?.setAttrs(toKonva(t))
       ref.current?.getLayer()?.batchDraw()
     }
 
