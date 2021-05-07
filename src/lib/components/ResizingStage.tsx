@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import Konva from "konva";
 import { Stage, StageProps } from "react-konva";
 
-import { subscribeSize } from "../../lib/useSize";
+import { subscribeSize } from "../useSize";
 
 export const ResizingStage = (props: StageProps): JSX.Element | null => {
   const ref = useRef<Konva.Stage>(null)

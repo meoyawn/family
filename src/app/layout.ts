@@ -1,8 +1,8 @@
 import { ElkEdge, ElkLabel, ElkNode } from 'elkjs/lib/elk.bundled.js'
 
-import { Family, FamilyTree, Person } from "../app/types";
-import { measureText } from "./text";
-import { FONT_SIZE, LINE_HEIGHT } from "../app/font";
+import { Family, FamilyTree, Person } from "./types";
+import { measureText } from "../lib/text";
+import { FONT_SIZE, LINE_HEIGHT } from "./font";
 
 type EdgeRouting =
   | 'UNDEFINED'

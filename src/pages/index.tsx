@@ -5,7 +5,7 @@ import ELK from "elkjs/lib/elk.bundled"
 
 import { editingSelector, rootSelector, useStore } from "../app/store"
 import { FamilyTree } from "../app/types"
-import { toELK } from "../lib/layout"
+import { toELK } from "../app/layout"
 import { Canvas } from "../app/components/Canvas"
 import { deleteStuff, giveBirth } from "../app/modification"
 import { elkBFS } from "../lib/elk"

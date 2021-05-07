@@ -5,7 +5,7 @@ import Konva from 'konva'
 import { arrowEndSelector, arrowStartSelector, useStore } from "../store"
 import { dragTransform, stayInPlace, wheelTransform } from "../../lib/konva"
 import InfiniteGrid from "./InfiniteGrid"
-import { ResizingStage } from "./ResizingStage"
+import { ResizingStage } from "../../lib/components/ResizingStage"
 import Graph from "./Graph"
 
 Konva.hitOnDragEnabled = true
