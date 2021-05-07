@@ -37,6 +37,10 @@ export const Canvas = (): JSX.Element => (
       set: transform => useStore.setState({ transform }),
       extent: [0.3, 20],
     })}
+
+    onClick={() => {
+      useStore.setState({ selected: new Set() })
+    }}
   >
     <Layer>
       <InfiniteGrid />

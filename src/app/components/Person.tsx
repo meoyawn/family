@@ -44,8 +44,11 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
       y={y}
 
       {...hoverProps}
-      onClick={() => {
-        const selected = new Set(useStore.getState().selected)
+      onClick={({ evt }: Konva.KonvaEventObject<MouseEvent>) => {
+        const old = evt.ctrlKey
+          ? useStore.getState().selected
+          : []
+        const selected = new Set(old)
         selected.add(node.id)
         useStore.setState({ selected })
       }}

@@ -16,7 +16,9 @@ export const Edge = ({ edge }: {
     ref.current?.to({ points })
   }, [points])
 
+  // noinspection RequiredAttributes
   return (
+    // @ts-ignore we animate
     <Line
       ref={ref}
       // points={points}
