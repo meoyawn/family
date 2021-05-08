@@ -1,14 +1,14 @@
 .next/
 node_modules/
 .now/
-.idea/
+**/.idea/
 yarn-error.log
 
 gen/
 
-public/sitemap.xml
-public/manifest/
-public/elk-worker.min.js
+**/public/sitemap.xml
+**/public/manifest/
+**/public/elk-worker.min.js
 
 out/
 
