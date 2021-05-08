@@ -1,5 +1,5 @@
 import React from "react"
-import { Layer, Line } from "react-konva"
+import { Arrow, Layer } from "react-konva"
 import Konva from 'konva'
 
 import { arrowEndSelector, arrowStartSelector, useStore } from "../store"
@@ -17,9 +17,10 @@ const Arrows = () => {
   const end = useStore(arrowEndSelector)
 
   return start && end ? (
-    <Line
+    <Arrow
       points={start.concat(end)}
       stroke="black"
+      fill="black"
       listening={false}
     />
   ) : null
@@ -30,10 +31,20 @@ export default function Canvas(): JSX.Element {
     <ResizingStage
       draggable={true}
       dragBoundFunc={stayInPlace}
+      onDragStart={({ target }) => {
+        if (target instanceof Konva.Stage) {
+          useStore.setState({ zooming: true })
+        }
+      }}
       onDragMove={dragTransform({
         get: () => useStore.getState().transform,
         set: transform => useStore.setState({ transform }),
       })}
+      onDragEnd={({ target }) => {
+        if (target instanceof Konva.Stage) {
+          useStore.setState({ zooming: false })
+        }
+      }}
 
       onWheel={wheelTransform({
         get: () => useStore.getState().transform,

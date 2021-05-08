@@ -43,7 +43,10 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
 
         switch (target.name()) {
           case "person": {
-            const old = evt.ctrlKey ? selected : []
+            const old = evt.ctrlKey || evt.shiftKey
+              ? selected
+              : []
+
             const selected1 = new Set(old)
             selected1.add(pid)
             useStore.setState({ selected: selected1 })

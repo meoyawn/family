@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react"
 import { ElkNode } from "elkjs/lib/elk-api"
 import { ZoomTransform } from "d3-zoom"
 
-import { transformSelector, useStore } from "../store"
+import { transformSelector, useStore, zoomingSelector } from "../store"
 import { FONT_SIZE, LINE_HEIGHT } from "../font"
 import { changeName } from "../modification"
 import { PersonID } from "../types"
@@ -27,6 +27,8 @@ export const Editor = ({ node }: {
 }): JSX.Element => {
 
   const transform = useStore(transformSelector)
+  const zooming = useStore(zoomingSelector)
+
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export const Editor = ({ node }: {
   return (
     <div
       ref={ref}
-      className="absolute focus:outline-none text-center bg-white rounded-sm duration-300"
+      className="absolute focus:outline-none text-center bg-white rounded-sm"
       contentEditable={true}
       role="textbox"
       style={{
@@ -57,6 +59,7 @@ export const Editor = ({ node }: {
         transform: toCSS(transform),
         fontSize: `${FONT_SIZE}px`,
         lineHeight: LINE_HEIGHT,
+        transitionDuration: zooming ? undefined : '400ms'
       }}
       onBlur={({ target }) => {
         const { tree } = useStore.getState()

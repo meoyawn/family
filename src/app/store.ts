@@ -7,7 +7,10 @@ import { PointTuple } from "../lib/geometry"
 
 interface State {
   tree: FamilyTree
+
   transform: ZoomTransform
+  zooming: boolean
+
   selected: Set<PersonID | FamilyID>
 
   root?: ElkNode
@@ -21,6 +24,7 @@ export const useStore = create<State>(() => ({
   tree: {} as FamilyTree,
   transform: zoomIdentity,
   selected: new Set(),
+  zooming: false,
 }))
 
 export const rootSelector = (s: State): ElkNode | undefined =>
@@ -28,6 +32,9 @@ export const rootSelector = (s: State): ElkNode | undefined =>
 
 export const transformSelector = (s: State): ZoomTransform =>
   s.transform
+
+export const zoomingSelector = (s: State): boolean =>
+  s.zooming
 
 export const editingSelector = (s: State): PersonID | undefined =>
   s.editing

@@ -22,6 +22,10 @@ type CycleBreakingStrategy =
   | "DEPTH_FIRST"
   | "INTERACTIVE"
 
+type Direction =
+  | "DOWN"
+  | "RIGHT"
+
 const measuredLabel = (text: string): ElkLabel => (
   {
     text,
@@ -101,8 +105,9 @@ const familyEdges = ({ id, p1, p2 }: Family): ElkEdge[] =>
     } as ElkEdge
   ]
 
+const DIRECTION: Direction = "DOWN"
 const EDGE_ROUTING: EdgeRouting = "ORTHOGONAL"
-const NODE_PLACEMENT_STRATEGY: NodePlacementStrategy = "LINEAR_SEGMENTS"
+const NODE_PLACEMENT_STRATEGY: NodePlacementStrategy = "NETWORK_SIMPLEX"
 const CYCLE_BREAKING_STRATEGY: CycleBreakingStrategy = "GREEDY"
 
 export const toELK = ({ people, families }: FamilyTree): ElkNode => {
@@ -112,10 +117,11 @@ export const toELK = ({ people, families }: FamilyTree): ElkNode => {
     children: [],
     edges: [],
     layoutOptions: {
-      'org.eclipse.elk.direction': "DOWN",
+      'org.eclipse.elk.direction': DIRECTION,
       'org.eclipse.elk.layered.nodePlacement.strategy': NODE_PLACEMENT_STRATEGY,
       'org.eclipse.elk.edgeRouting': EDGE_ROUTING,
       'org.eclipse.elk.layered.cycleBreaking.strategy': CYCLE_BREAKING_STRATEGY,
+      // 'org.eclipse.elk.layered.spacing.baseValue': '20',
     },
   }
 
