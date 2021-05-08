@@ -1,7 +1,7 @@
-import * as Y from "yjs";
+import * as Y from "yjs"
 
-export type FamilyID = string
-export type PersonID = string
+export type FamilyID = string & { readonly __tag: unique symbol }
+export type PersonID = string & { readonly __tag: unique symbol }
 
 export interface Person {
   id: PersonID

@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import { editingSelector, rootSelector, useStore } from "../app/store"
 import { FamilyTree } from "../app/types"
 import { toELK } from "../app/layout"
-import { createPerson, deleteStuff } from "../app/modification"
+import { createChild, deleteStuff } from "../app/modification"
 import { elkBFS } from "../lib/elk"
 import { Editor } from "../app/components/Editor"
 
@@ -85,7 +85,7 @@ export default function Index(): JSX.Element {
             className=" bg-blue-600 hover:bg-blue-400 rounded-md  p-2"
             onClick={() => {
               const { tree } = useStore.getState()
-              const editing = createPerson(tree, "")
+              const editing = createChild(tree, "")
               useStore.setState({ editing })
             }}
           >

@@ -41,7 +41,7 @@ export const Editor = ({ node }: {
   return (
     <div
       ref={ref}
-      className="absolute focus:outline-none text-center bg-white rounded-sm table-cell align-middle"
+      className="absolute focus:outline-none text-center bg-white rounded-sm table-cell align-middle duration-300"
       contentEditable={true}
       role="textbox"
       style={{

@@ -15,7 +15,6 @@ export const Edge = ({ edge }: {
   useEffect(() => {
     ref.current?.points(points)
   }, [])
-
   useEffect(() => {
     ref.current?.to({ points })
   }, [points])

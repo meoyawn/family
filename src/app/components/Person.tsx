@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import Konva from "konva";
-import { Circle } from "react-konva";
-import { a, useSpring } from '@react-spring/konva'
+import { Circle, Group, Rect } from "react-konva";
 import { ElkNode } from "elkjs/lib/elk-api"
 
 import { selectedSelector, useStore } from "../store";
@@ -9,26 +8,33 @@ import { Label } from "./Label";
 import { useHover } from "../../lib/useHover";
 import { stayInPlace } from "../../lib/konva";
 import { createParents, createSpouse, makeChild, marry } from "../modification";
+import { FamilyID, PersonID } from "../types";
 
 export default function Person({ node }: { node: ElkNode }): JSX.Element {
 
   const [hoverProps, hovering] = useHover()
 
-  const [{ x, y, width, height }] = useSpring({
-    x: node.x,
-    y: node.y,
-    width: node.width,
-    height: node.height,
+  const gref = useRef<Konva.Group>(null)
+  const rref = useRef<Konva.Rect>(null)
+
+  useEffect(() => {
+    gref.current?.setPosition({ x: node.x, y: node.y })
+    rref.current?.setSize({ width: node.width, height: node.height })
+  }, [])
+
+  useEffect(() => {
+    gref.current?.to({ x: node.x, y: node.y })
+    rref.current?.to({ width: node.width, height: node.height })
   }, [node])
 
+  const pid = node.id as PersonID
+
   const selected = useStore(selectedSelector)
-  const isSelected = selected.has(node.id)
+  const isSelected = selected.has(pid)
 
   return (
-    <a.Group
-      x={x}
-      y={y}
-
+    <Group
+      ref={gref}
       {...hoverProps}
       onClick={({ evt, target }: Konva.KonvaEventObject<MouseEvent>) => {
         const { tree, selected } = useStore.getState()
@@ -36,13 +42,13 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
           case "person": {
             const old = evt.ctrlKey ? selected : []
             const selected1 = new Set(old)
-            selected1.add(node.id)
+            selected1.add(pid)
             useStore.setState({ selected: selected1 })
             break
           }
 
           case "create_parents": {
-            const result = createParents(tree, node.id)
+            const result = createParents(tree, pid)
             if (result) {
               const [editing] = result
               useStore.setState({ editing })
@@ -51,7 +57,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
           }
 
           case "create_spouse": {
-            const editing = createSpouse(tree, node.id)
+            const editing = createSpouse(tree, pid)
             if (editing) {
               useStore.setState({ editing })
             }
@@ -59,7 +65,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
           }
         }
       }}
-      onDblClick={() => useStore.setState({ editing: node.id })}
+      onDblClick={() => useStore.setState({ editing: pid })}
 
       draggable={true}
       dragBoundFunc={stayInPlace}
@@ -71,23 +77,22 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
         const { tree } = useStore.getState()
         switch (drop?.name()) {
           case "person": {
-            marry(tree, node.id, drop.id())
+            marry(tree, pid, drop.id() as PersonID)
             break
           }
 
           case "family": {
-            makeChild(tree, node.id, drop.id())
+            makeChild(tree, pid, drop.id() as FamilyID)
             break
           }
         }
         useStore.setState({ arrowStart: undefined, arrowEnd: undefined })
       }}
     >
-      <a.Rect
-        id={node.id}
+      <Rect
+        ref={rref}
+        id={pid}
         name="person"
-        width={width}
-        height={height}
 
         stroke={hovering ? "blue" : "black"}
         fill="white"
@@ -117,6 +122,6 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
           fill="black"
         />
       )}
-    </a.Group>
+    </Group>
   )
 }
