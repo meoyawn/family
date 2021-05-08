@@ -17,10 +17,10 @@ const clamp = ([min, max]: Extent, n: number) =>
 const defaultWheelDelta = (event: WheelEvent) =>
   -event.deltaY * (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002) * (event.ctrlKey ? 10 : 1)
 
-const wheel = (screenPos: PointObj, t: ZoomTransform, extent: Extent, evt: WheelEvent): ZoomTransform => {
-  const [wx, wy] = worldPos(t, screenPos)
+const wheel = (screenPos: PointObj, old: ZoomTransform, extent: Extent, evt: WheelEvent): ZoomTransform => {
+  const [wx, wy] = worldPos(old, screenPos)
 
-  const newK = clamp(extent, t.k * Math.pow(2, defaultWheelDelta(evt)))
+  const newK = clamp(extent, old.k * Math.pow(2, defaultWheelDelta(evt)))
 
   return zoomIdentity
     .translate(

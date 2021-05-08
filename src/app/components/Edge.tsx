@@ -24,6 +24,7 @@ export const Edge = ({ edge }: {
       // points={points}
       stroke="black"
       strokeWidth={1}
+      listening={false}
     />
   )
 }

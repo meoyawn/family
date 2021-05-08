@@ -17,14 +17,13 @@ const Grid = ({ xScale, numTicksColumns, width, height, stroke, opacity, yScale,
   stroke: string
   opacity: number
 }): JSX.Element => (
-  <Group>
+  <Group listening={false}>
     {xScale.ticks(numTicksColumns).map((x, i) => (
       <Line
         key={i}
         points={[xScale(x), 0, xScale(x), height]}
         stroke={stroke}
         opacity={opacity}
-        listening={false}
       />
     ))}
 
@@ -34,7 +33,6 @@ const Grid = ({ xScale, numTicksColumns, width, height, stroke, opacity, yScale,
         points={[0, yScale(y), width, yScale(y)]}
         stroke={stroke}
         opacity={opacity}
-        listening={false}
       />
     ))}
   </Group>

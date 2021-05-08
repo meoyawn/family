@@ -23,29 +23,33 @@ const Arrows = () => {
   ) : null
 }
 
-export const Canvas = (): JSX.Element => (
-  <ResizingStage
-    draggable={true}
-    dragBoundFunc={stayInPlace}
-    onDragMove={dragTransform({
-      get: () => useStore.getState().transform,
-      set: transform => useStore.setState({ transform }),
-    })}
+export default function Canvas(): JSX.Element {
+  return (
+    <ResizingStage
+      draggable={true}
+      dragBoundFunc={stayInPlace}
+      onDragMove={dragTransform({
+        get: () => useStore.getState().transform,
+        set: transform => useStore.setState({ transform }),
+      })}
 
-    onWheel={wheelTransform({
-      get: () => useStore.getState().transform,
-      set: transform => useStore.setState({ transform }),
-      extent: [0.3, 20],
-    })}
+      onWheel={wheelTransform({
+        get: () => useStore.getState().transform,
+        set: transform => useStore.setState({ transform }),
+        extent: [0.3, 20],
+      })}
 
-    onClick={() => {
-      useStore.setState({ selected: new Set() })
-    }}
-  >
-    <Layer>
-      <InfiniteGrid />
-      <Graph />
-      <Arrows />
-    </Layer>
-  </ResizingStage>
-)
+      onClick={({ target }) => {
+        if (target instanceof Konva.Stage) {
+          useStore.setState({ selected: new Set() })
+        }
+      }}
+    >
+      <Layer>
+        <InfiniteGrid />
+        <Graph />
+        <Arrows />
+      </Layer>
+    </ResizingStage>
+  )
+}

@@ -2,14 +2,17 @@ import React, { useEffect, useMemo, useRef } from "react"
 import * as Y from "yjs"
 import { IndexeddbPersistence } from "y-indexeddb"
 import ELK from "elkjs/lib/elk.bundled"
+import hotkeys from "hotkeys-js";
+import dynamic from "next/dynamic";
 
 import { editingSelector, rootSelector, useStore } from "../app/store"
 import { FamilyTree } from "../app/types"
 import { toELK } from "../app/layout"
-import { Canvas } from "../app/components/Canvas"
-import { deleteStuff, giveBirth } from "../app/modification"
+import { createPerson, deleteStuff } from "../app/modification"
 import { elkBFS } from "../lib/elk"
 import { Editor } from "../app/components/Editor"
+
+const Canvas = dynamic(() => import("../app/components/Canvas"), { ssr: false })
 
 const Editing = (): JSX.Element | null => {
   const editing = useStore(editingSelector)
@@ -43,9 +46,24 @@ export default function Index(): JSX.Element {
       const root = await elk.layout(toELK(tree))
       useStore.setState({ root })
     }
-
     doc.on('update', onDocChange)
+
+    hotkeys('delete, backspace', doDelete)
+    hotkeys('ctrl+z, cmd+z', () => {
+      if (!undoMgr.undoing) {
+        undoMgr.undo()
+      }
+    })
+    hotkeys('ctrl+shift+z, cmd+shift+z', () => {
+      if (!undoMgr.redoing) {
+        undoMgr.redo()
+      }
+    })
+
     return () => {
+      hotkeys.unbind()
+      undoMgr.destroy()
+      persistence.destroy()
       doc.destroy()
     }
   }, [])
@@ -64,7 +82,7 @@ export default function Index(): JSX.Element {
             className=" bg-blue-600 hover:bg-blue-400 rounded-md  p-2"
             onClick={() => {
               const { tree } = useStore.getState()
-              const editing = giveBirth(tree, "")
+              const editing = createPerson(tree, "")
               useStore.setState({ editing })
             }}
           >
@@ -73,11 +91,7 @@ export default function Index(): JSX.Element {
 
           <button
             className="bg-blue-600 hover:bg-blue-400 rounded-md p-2"
-            onClick={() => {
-              const { tree, selected } = useStore.getState()
-              deleteStuff(tree, selected)
-              useStore.setState({ selected: new Set() })
-            }}
+            onClick={doDelete}
           >
             Delete
           </button>
@@ -85,4 +99,10 @@ export default function Index(): JSX.Element {
       </div>
     </div>
   )
+}
+
+const doDelete = () => {
+  const { tree, selected } = useStore.getState()
+  deleteStuff(tree, selected)
+  useStore.setState({ selected: new Set() })
 }

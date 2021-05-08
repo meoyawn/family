@@ -1,28 +1,14 @@
 import React from "react";
 import Konva from "konva";
-import { Image } from "react-konva"
-import { ElkNode } from "elkjs/lib/elk.bundled"
+import { Circle } from "react-konva";
 import { a, useSpring } from '@react-spring/konva'
+import { ElkNode } from "elkjs/lib/elk.bundled"
 
-import { useStore } from "../store";
+import { selectedSelector, useStore } from "../store";
 import { Label } from "./Label";
-import { dataImg } from "../../lib/image";
 import { useHover } from "../../lib/useHover";
 import { stayInPlace } from "../../lib/konva";
-import { makeChild, marry } from "../modification";
-
-const plusSVG = "%0A%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-plus-circle'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cline x1='12' y1='8' x2='12' y2='16'%3E%3C/line%3E%3Cline x1='8' y1='12' x2='16' y2='12'%3E%3C/line%3E%3C/svg%3E"
-
-const PlusBtn = () => {
-  const [props, hovering] = useHover()
-  return (
-    <Image
-      {...props}
-      image={dataImg(plusSVG)}
-      fill={hovering ? 'rgba(0, 0, 0, 0.1)' : 'transparent'}
-    />
-  )
-}
+import { createParents, createSpouse, makeChild, marry } from "../modification";
 
 export default function Person({ node }: { node: ElkNode }): JSX.Element {
 
@@ -35,6 +21,9 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
     height: node.height,
   }, [node])
 
+  const selected = useStore(selectedSelector)
+  const isSelected = selected.has(node.id)
+
   return (
     <a.Group
       id={node.id}
@@ -44,13 +33,34 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
       y={y}
 
       {...hoverProps}
-      onClick={({ evt }: Konva.KonvaEventObject<MouseEvent>) => {
-        const old = evt.ctrlKey
-          ? useStore.getState().selected
-          : []
-        const selected = new Set(old)
-        selected.add(node.id)
-        useStore.setState({ selected })
+      onClick={({ evt, target }: Konva.KonvaEventObject<MouseEvent>) => {
+        const { tree, selected } = useStore.getState()
+        switch (target.name()) {
+          case "person": {
+            const old = evt.ctrlKey ? selected : []
+            const selected1 = new Set(old)
+            selected1.add(node.id)
+            useStore.setState({ selected: selected1 })
+            break
+          }
+
+          case "create_parents": {
+            const result = createParents(tree, node.id)
+            if (result) {
+              const [editing] = result
+              useStore.setState({ editing })
+            }
+            break
+          }
+
+          case "create_spouse": {
+            const editing = createSpouse(tree, node.id)
+            if (editing) {
+              useStore.setState({ editing })
+            }
+            break
+          }
+        }
       }}
       onDblClick={() => useStore.setState({ editing: node.id })}
 
@@ -59,7 +69,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
       onDragStart={({ evt }: Konva.KonvaEventObject<DragEvent>) => useStore.setState({ arrowStart: [evt.x, evt.y] })}
       onDragMove={({ evt }: Konva.KonvaEventObject<DragEvent>) => useStore.setState({ arrowEnd: [evt.x, evt.y] })}
       onDragEnd={({ evt, target }: Konva.KonvaEventObject<DragEvent>) => {
-        const drop: Konva.Node | undefined = target.getLayer()?.getIntersection(evt, ".person,.family")
+        const drop: Konva.Node | undefined = target.getLayer()?.getIntersection(evt, ".person, .family")
 
         const { tree } = useStore.getState()
         switch (drop?.name()) {
@@ -69,7 +79,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
           }
 
           case "family": {
-            makeChild(tree, node.id, drop?.id())
+            makeChild(tree, node.id, drop.id())
             break
           }
         }
@@ -77,18 +87,38 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
       }}
     >
       <a.Rect
+        name="person"
         width={width}
         height={height}
 
         stroke={hovering ? "blue" : "black"}
         fill="white"
         cornerRadius={2}
-        strokeWidth={1}
+        strokeWidth={isSelected ? 2 : 1}
       />
 
       {node.labels?.map((lbl, i) => (
         <Label key={i} label={lbl} />
       ))}
+
+      {hovering && (
+        <Circle
+          name="create_parents"
+          x={node.width! / 2}
+          radius={3}
+          fill="black"
+        />
+      )}
+
+      {hovering && (
+        <Circle
+          name="create_spouse"
+          x={node.width}
+          y={node.height! / 2}
+          radius={3}
+          fill="black"
+        />
+      )}
     </a.Group>
   )
 }

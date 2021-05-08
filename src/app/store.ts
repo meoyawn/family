@@ -37,3 +37,6 @@ export const arrowStartSelector = (s: State): PointTuple | undefined =>
 
 export const arrowEndSelector = (s: State): PointTuple | undefined =>
   s.arrowEnd
+
+export const selectedSelector = (s: State): Set<PersonID | FamilyID> =>
+  s.selected

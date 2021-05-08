@@ -1,28 +1,38 @@
 import { ElkNode } from "elkjs/lib/elk.bundled"
-import React from "react"
+import React, { useEffect, useRef } from "react"
 import { Circle } from "react-konva"
-import { giveBirth } from "../modification";
+import Konva from "konva";
+
+import { createPerson } from "../modification";
 import { useStore } from "../store";
 import { useHover } from "../../lib/useHover";
 
 export const Family = ({ node }: { node: ElkNode }): JSX.Element => {
-  const [props, hovering] = useHover()
+  const [hoverProps, hovering] = useHover()
+  const ref = useRef<Konva.Circle>(null)
+
+  useEffect(() => {
+    ref.current?.setPosition({ x: node.x, y: node.y })
+  }, [])
+
+  useEffect(() => {
+    ref.current?.to({ x: node.x, y: node.y })
+  }, [node])
 
   return (
     <Circle
-      {...props}
-      radius={hovering ? 6 : 2}
-      hitStrokeWidth={6}
       id={node.id}
       name="family"
-      x={node.x}
-      y={node.y}
+      ref={ref}
+      radius={hovering ? 6 : 1}
+      fill="black"
+      hitStrokeWidth={hovering ? 0 : 6}
+      {...hoverProps}
       onClick={() => {
         const { tree } = useStore.getState()
-        const editing = giveBirth(tree, "", node.id)
+        const editing = createPerson(tree, "", node.id)
         useStore.setState({ editing })
       }}
-      fill="black"
     />
   )
 }

@@ -3,13 +3,13 @@ import '../tailwind.css'
 import React from "react"
 import { AppProps } from 'next/app'
 
-import Layout from '../app/components/Layout'
+import AppLayout from '../app/components/AppLayout'
 
 // noinspection JSUnusedGlobalSymbols
 export default function MyApp({ Component, pageProps }: AppProps): JSX.Element {
   return (
-    <Layout>
+    <AppLayout>
       <Component {...pageProps} />
-    </Layout>
+    </AppLayout>
   )
 }

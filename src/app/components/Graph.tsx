@@ -10,11 +10,11 @@ export default function Graph(): JSX.Element {
 
   return (
     <ZoomingGroup>
-      {root?.edges?.map(e => (
-        <Edge key={e.id} edge={e} />
-      ))}
       {root?.children?.map(c => (
         <Node key={c.id} node={c} />
+      ))}
+      {root?.edges?.map(e => (
+        <Edge key={e.id} edge={e} />
       ))}
     </ZoomingGroup>
   )

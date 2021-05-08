@@ -1,10 +1,13 @@
 import { FamilyID, FamilyTree, PersonID } from "./types";
 import { genID } from "../lib/ids";
 
+const familyID = (p1: PersonID, p2: PersonID): FamilyID =>
+  [p1, p2].sort().join(':')
+
 export const marry = ({ people, families }: FamilyTree, p1: PersonID, p2: PersonID): void => {
   if (p1 === p2) return
 
-  const id = [p1, p2].sort().join(':')
+  const id = familyID(p1, p2)
   if (families.get(id)) return
 
   const person1 = people.get(p1)
@@ -30,7 +33,7 @@ export const marry = ({ people, families }: FamilyTree, p1: PersonID, p2: Person
   })
 }
 
-export const giveBirth = ({ people, families }: FamilyTree, name: string, fid?: FamilyID): PersonID => {
+export const createPerson = ({ people, families }: FamilyTree, name: string, fid?: FamilyID): PersonID => {
   const family = fid && families.get(fid)
   const id = genID('p')
 
@@ -105,4 +108,60 @@ export const makeChild = ({ families }: FamilyTree, pid: PersonID, fid: FamilyID
       children: family.children.concat(pid),
     })
   })
+}
+
+export const createParents = (
+  { people, families }: FamilyTree,
+  cid: PersonID,
+): [PersonID, PersonID, FamilyID] | undefined => {
+  if (!cid) return undefined
+
+  const p1 = genID("p")
+  const p2 = genID("p")
+  const fid = familyID(p1, p2)
+
+  people.doc?.transact(() => {
+    families.set(fid, {
+      id: fid,
+      children: [cid],
+    })
+    people.set(p1, {
+      id: p1,
+      name: "",
+      marriages: [fid],
+    })
+    people.set(p2, {
+      id: p2,
+      name: "",
+      marriages: [fid],
+    })
+  })
+
+  return [p1, p2, fid]
+}
+
+export const createSpouse = ({ people, families }: FamilyTree, pid: PersonID): PersonID | undefined => {
+  const person = people.get(pid)
+  if (!person) return undefined
+
+  const sid = genID("p")
+  const fid = familyID(pid, sid)
+
+  people.doc?.transact(() => {
+    families.set(fid, {
+      id: fid,
+      children: [],
+    })
+    people.set(person.id, {
+      ...person,
+      marriages: person.marriages.concat(fid),
+    })
+    people.set(sid, {
+      id: sid,
+      name: "",
+      marriages: [fid],
+    })
+  })
+
+  return sid
 }
