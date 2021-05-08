@@ -9,11 +9,12 @@ export const ResizingStage = (props: StageProps): JSX.Element | null => {
 
   useEffect(() => {
     const stage = ref.current
-    if (!stage) return
+    const parentElement = stage?.container()?.parentElement
+    if (!parentElement) return
 
-    return subscribeSize(stage.container().parentElement!, el => {
-      stage.size({ width: el.clientWidth, height: el.clientHeight })
-      stage.batchDraw()
+    return subscribeSize(parentElement, el => {
+      stage?.size({ width: el.clientWidth, height: el.clientHeight })
+      stage?.batchDraw()
     })
   }, [])
 

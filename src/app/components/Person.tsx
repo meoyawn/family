@@ -104,7 +104,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
       {hovering && (
         <Circle
           name="create_parents"
-          x={node.width! / 2}
+          x={node.width && node.width / 2}
           radius={3}
           fill="black"
         />
@@ -114,7 +114,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
         <Circle
           name="create_spouse"
           x={node.width}
-          y={node.height! / 2}
+          y={node.height && node.height / 2}
           radius={3}
           fill="black"
         />
