@@ -1,4 +1,4 @@
-import { FamilyID, FamilyTree, PersonID } from "./types";
+import { FamilyID, FamilyTree, PersonID, Sex } from "./types";
 import { genID } from "../lib/ids";
 
 const familyID = (p1: PersonID, p2: PersonID): FamilyID =>
@@ -21,7 +21,7 @@ export const marry = ({ families, doc }: FamilyTree, p1: PersonID, p2: PersonID)
   return id
 }
 
-export const createChild = ({ people }: FamilyTree, name: string, fid?: FamilyID): PersonID => {
+export const createChild = ({ people }: FamilyTree, name: string, sex: Sex, fid?: FamilyID): PersonID => {
   const id = genID('p') as PersonID
 
   people.doc?.transact(() => {
@@ -29,6 +29,7 @@ export const createChild = ({ people }: FamilyTree, name: string, fid?: FamilyID
       id,
       name,
       fid,
+      sex,
     })
   })
 
@@ -108,6 +109,8 @@ export const makeChild = ({ people, doc, families }: FamilyTree, pid: PersonID, 
 export const createParents = (
   { people, families, doc }: FamilyTree,
   cid: PersonID,
+  dad: string,
+  mom: string,
 ): [PersonID, PersonID, FamilyID] | undefined => {
   if (!cid) return undefined
   const child = people.get(cid)
@@ -120,11 +123,13 @@ export const createParents = (
   doc.transact(() => {
     people.set(p1, {
       id: p1,
-      name: "",
+      name: dad,
+      sex: 'm',
     })
     people.set(p2, {
       id: p2,
-      name: "",
+      name: mom,
+      sex: 'f',
     })
     families.set(fid, {
       id: fid,
@@ -140,7 +145,17 @@ export const createParents = (
   return [p1, p2, fid]
 }
 
-export const createSpouse = ({ people, families }: FamilyTree, pid: PersonID): PersonID | undefined => {
+const opposite = (s: Sex): Sex => {
+  switch (s) {
+    case "m":
+      return 'f'
+
+    case "f":
+      return 'm'
+  }
+}
+
+export const createSpouse = ({ people, families }: FamilyTree, pid: PersonID): [PersonID, FamilyID] | undefined => {
   const person = people.get(pid)
   if (!person) return undefined
 
@@ -151,6 +166,7 @@ export const createSpouse = ({ people, families }: FamilyTree, pid: PersonID): P
     people.set(sid, {
       id: sid,
       name: "",
+      sex: opposite(person.sex),
     })
     families.set(fid, {
       id: fid,
@@ -159,5 +175,5 @@ export const createSpouse = ({ people, families }: FamilyTree, pid: PersonID): P
     })
   })
 
-  return sid
+  return [sid, fid]
 }

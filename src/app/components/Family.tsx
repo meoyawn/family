@@ -35,7 +35,7 @@ export const Family = ({ node }: { node: ElkNode }): JSX.Element => {
       onClick={() => {
         const { tree, root } = useStore.getState()
 
-        const pid = createChild(tree, "", fid)
+        const pid = createChild(tree, "", "m", fid)
 
         const newRoot = root && { ...root }
         newRoot?.children?.push(mkNode(pid, node))

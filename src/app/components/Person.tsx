@@ -39,6 +39,8 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
       {...hoverProps}
       onClick={({ evt, target }: Konva.KonvaEventObject<MouseEvent>) => {
         const { tree, selected, root } = useStore.getState()
+        const newRoot = root && { ...root }
+
         switch (target.name()) {
           case "person": {
             const old = evt.ctrlKey ? selected : []
@@ -49,10 +51,9 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
           }
 
           case "create_parents": {
-            const result = createParents(tree, pid)
+            const result = createParents(tree, pid, "Dad", 'Mom')
             if (result) {
               const [p1, p2, fid] = result
-              const newRoot = root && { ...root }
               newRoot?.children?.push(
                 mkNode(p1, node),
                 mkNode(p2, node),
@@ -68,9 +69,15 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
           }
 
           case "create_spouse": {
-            const editing = createSpouse(tree, pid)
-            if (editing) {
-              useStore.setState({ editing })
+            const result = createSpouse(tree, pid)
+            if (result) {
+              const [editing, fid] = result
+              newRoot?.children?.push(mkNode(editing, node))
+              newRoot?.edges?.push(
+                mkEdge(`${pid}:${fid}`, node),
+                mkEdge(`${editing}:${fid}`, node),
+              )
+              useStore.setState({ editing, root: newRoot })
             }
             break
           }

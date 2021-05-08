@@ -2,12 +2,13 @@ import * as Y from "yjs"
 
 export type FamilyID = string & { readonly __tag: unique symbol }
 export type PersonID = string & { readonly __tag: unique symbol }
+export type Sex = 'm' | 'f'
 
 export interface Person {
   id: PersonID
   name: string
+  sex: Sex
 
-  sex?: 'm' | 'f'
   fid?: FamilyID
   birthYear?: number
   deathYear?: number

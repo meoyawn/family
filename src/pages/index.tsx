@@ -81,15 +81,27 @@ export default function Index(): JSX.Element {
         <Editing />
 
         <div className="absolute top-1 right-1 flex flex-col space-y-1 font-medium text-white">
+
           <button
-            className=" bg-blue-600 hover:bg-blue-400 rounded-md  p-2"
+            className=" bg-blue-600 hover:bg-blue-400 rounded-md p-2"
             onClick={() => {
               const { tree } = useStore.getState()
-              const editing = createChild(tree, "")
+              const editing = createChild(tree, "Man", "m")
               useStore.setState({ editing })
             }}
           >
-            New
+            Man
+          </button>
+
+          <button
+            className=" bg-blue-600 hover:bg-blue-400 rounded-md p-2"
+            onClick={() => {
+              const { tree } = useStore.getState()
+              const editing = createChild(tree, "Woman", "f")
+              useStore.setState({ editing })
+            }}
+          >
+            Woman
           </button>
 
           <button
