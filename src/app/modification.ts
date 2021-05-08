@@ -4,52 +4,32 @@ import { genID } from "../lib/ids";
 const familyID = (p1: PersonID, p2: PersonID): FamilyID =>
   [p1, p2].sort().join(':')
 
-export const marry = ({ people, families }: FamilyTree, p1: PersonID, p2: PersonID): void => {
-  if (p1 === p2) return
+export const marry = ({ families, doc }: FamilyTree, p1: PersonID, p2: PersonID): FamilyID | undefined => {
+  if (p1 === p2) return undefined
 
   const id = familyID(p1, p2)
-  if (families.get(id)) return
+  if (families.get(id)) return undefined
 
-  const person1 = people.get(p1)
-  const person2 = people.get(p2)
-  if (!person1 || !person2) return;
-
-  families.doc?.transact(() => {
-
+  doc.transact(() => {
     families.set(id, {
       id,
-      children: [],
-    })
-
-    people.set(p1, {
-      ...person1,
-      marriages: person1.marriages.concat(id),
-    })
-
-    people.set(p2, {
-      ...person2,
-      marriages: person2.marriages.concat(id),
+      p1,
+      p2,
     })
   })
+
+  return id
 }
 
-export const createPerson = ({ people, families }: FamilyTree, name: string, fid?: FamilyID): PersonID => {
-  const family = fid && families.get(fid)
+export const createPerson = ({ people }: FamilyTree, name: string, fid?: FamilyID): PersonID => {
   const id = genID('p')
 
   people.doc?.transact(() => {
     people.set(id, {
       id,
       name,
-      marriages: [],
+      fid,
     })
-
-    if (family) {
-      families.set(family.id, {
-        ...family,
-        children: family.children.concat(id),
-      })
-    }
   })
 
   return id
@@ -67,83 +47,93 @@ export const changeName = ({ people }: FamilyTree, pid: PersonID, name: string):
   })
 }
 
-export const deleteStuff = ({ people, families }: FamilyTree, del: Set<string>): void => {
+function delFamily({ people, families }: FamilyTree, fid: FamilyID) {
+  console.log(fid, 'delete family')
+
+  people.forEach(p => {
+    if (p.fid === fid) {
+      people.set(p.id, {
+        ...p,
+        fid: undefined
+      })
+    }
+  })
+
+  families.delete(fid)
+}
+
+function delPerson(tree: FamilyTree, pid: PersonID) {
+  const { people, families } = tree
+
+  console.log(pid, 'delete person')
+
+  families.forEach(f => {
+    if (f.p1 === pid || f.p2 === pid) {
+      delFamily(tree, f.id)
+    }
+  })
+
+  people.delete(pid)
+}
+
+export const deleteStuff = (tree: FamilyTree, del: Set<string>): void => {
   if (!del.size) return
 
-  people.doc?.transact(() => {
+  tree.doc.transact(() => {
     del.forEach(id => {
       if (id.includes(":")) {
-        people.forEach(p => {
-          if (p.marriages.includes(id)) {
-            people.set(p.id, {
-              ...p,
-              marriages: p.marriages.filter(x => x !== id),
-            })
-          }
-        })
-        families.delete(id)
+        delFamily(tree, id)
       } else {
-        families.forEach(f => {
-          if (f.children.includes(id)) {
-            families.set(f.id, {
-              ...f,
-              children: f.children.filter(x => x !== id),
-            })
-          }
-        })
-        people.delete(id)
+        delPerson(tree, id)
       }
     })
   })
 }
 
-export const makeChild = ({ families }: FamilyTree, pid: PersonID, fid: FamilyID): void => {
-  const family = families.get(fid)
-  if (!family) return
-  if (family.children.includes(pid)) return
+export const makeChild = ({ people, doc }: FamilyTree, pid: PersonID, fid: FamilyID): void => {
 
-  families.doc?.transact(() => {
+  const person = people.get(pid)
+  if (!person) return
 
-    families.forEach(f => {
-      if (f.children.includes(pid)) {
-        families.set(f.id, {
-          ...f,
-          children: f.children.filter(x => x !== pid),
-        })
-      }
-    })
+  if (person.fid === fid) return;
 
-    families.set(fid, {
-      ...family,
-      children: family.children.concat(pid),
+  doc.transact(() => {
+    people.set(pid, {
+      ...person,
+      fid,
     })
   })
 }
 
 export const createParents = (
-  { people, families }: FamilyTree,
+  { people, families, doc }: FamilyTree,
   cid: PersonID,
 ): [PersonID, PersonID, FamilyID] | undefined => {
   if (!cid) return undefined
+  const child = people.get(cid)
+  if (!child) return undefined
 
   const p1 = genID("p")
   const p2 = genID("p")
   const fid = familyID(p1, p2)
 
-  people.doc?.transact(() => {
-    families.set(fid, {
-      id: fid,
-      children: [cid],
-    })
+  doc.transact(() => {
     people.set(p1, {
       id: p1,
       name: "",
-      marriages: [fid],
     })
     people.set(p2, {
       id: p2,
       name: "",
-      marriages: [fid],
+    })
+    families.set(fid, {
+      id: fid,
+      p1,
+      p2,
+    })
+    people.set(cid, {
+      ...child,
+      fid,
     })
   })
 
@@ -158,18 +148,14 @@ export const createSpouse = ({ people, families }: FamilyTree, pid: PersonID): P
   const fid = familyID(pid, sid)
 
   people.doc?.transact(() => {
-    families.set(fid, {
-      id: fid,
-      children: [],
-    })
-    people.set(person.id, {
-      ...person,
-      marriages: person.marriages.concat(fid),
-    })
     people.set(sid, {
       id: sid,
       name: "",
-      marriages: [fid],
+    })
+    families.set(fid, {
+      id: fid,
+      p1: pid,
+      p2: sid,
     })
   })
 

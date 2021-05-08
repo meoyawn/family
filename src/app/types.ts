@@ -7,22 +7,24 @@ export interface Person {
   id: PersonID
   name: string
 
-  marriages: FamilyID[]
-
+  sex?: 'm' | 'f'
+  fid?: FamilyID
   birthYear?: number
   deathYear?: number
 }
 
 export interface Family {
   id: FamilyID
-  name?: string
-  children: PersonID[]
+  p1: PersonID
+  p2: PersonID
 
+  name?: string
   startYear?: number
   endYear?: number
 }
 
 export interface FamilyTree {
+  doc: Y.Doc
   people: Y.Map<Person>
   families: Y.Map<Family>
 }

@@ -1,6 +1,6 @@
 import { ElkEdge, ElkLabel, ElkNode } from 'elkjs/lib/elk-api'
 
-import { Family, FamilyTree, Person } from "./types";
+import { Family, FamilyID, FamilyTree, Person } from "./types";
 import { measureText } from "../lib/text";
 import { FONT_SIZE, LINE_HEIGHT } from "./font";
 
@@ -51,12 +51,16 @@ const personNode = ({ id, name, birthYear, deathYear }: Person): ElkNode => {
   )
 }
 
-const personEdges = ({ id, marriages }: Person): ElkEdge[] =>
-  marriages.map(fid => ({
-    id: `${id}:${fid}`,
-    sources: [id],
-    targets: [`${fid}.spouses`],
-  }))
+const personEdges = ({ id, fid }: Person): ElkEdge[] =>
+  fid
+    ? [
+      {
+        id: `${fid}:${id}`,
+        sources: [children(fid)],
+        targets: [id],
+      } as ElkEdge
+    ]
+    : []
 
 const smol = 0.000000001
 
@@ -67,12 +71,12 @@ const familyNode = ({ id }: Family): ElkNode => (
     height: smol,
     ports: [
       {
-        id: `${id}.spouses`,
+        id: spouses(id),
         width: smol,
         height: smol,
       },
       {
-        id: `${id}.children`,
+        id: children(id),
         width: smol,
         height: smol,
       },
@@ -80,12 +84,22 @@ const familyNode = ({ id }: Family): ElkNode => (
   }
 )
 
-const familyEdges = ({ id, children }: Family): ElkEdge[] =>
-  children.map(cid => ({
-    id: `${id}:${cid}`,
-    sources: [`${id}.children`],
-    targets: [cid],
-  }))
+const spouses = (id: FamilyID) => `${id}.spouses`
+const children = (id: FamilyID) => `${id}.children`
+
+const familyEdges = ({ id, p1, p2 }: Family): ElkEdge[] =>
+  [
+    {
+      id: `${p1}:${id}`,
+      sources: [p1],
+      targets: [spouses(id)],
+    } as ElkEdge,
+    {
+      id: `${p2}:${id}`,
+      sources: [p2],
+      targets: [spouses(id)],
+    } as ElkEdge
+  ]
 
 const EDGE_ROUTING: EdgeRouting = "ORTHOGONAL"
 const NODE_PLACEMENT_STRATEGY: NodePlacementStrategy = "LINEAR_SEGMENTS"

@@ -31,13 +31,14 @@ export default function Index(): JSX.Element {
   useEffect(() => {
     const doc = new Y.Doc()
     const tree: FamilyTree = {
+      doc,
       people: doc.getMap('people'),
       families: doc.getMap('families'),
     }
     useStore.setState({ tree })
 
     const persistence = new IndexeddbPersistence('doc', doc)
-    const undoMgr = new Y.UndoManager(Object.values(tree))
+    const undoMgr = new Y.UndoManager([tree.people, tree.families])
     persistence.whenSynced.then(() => undoMgr.clear())
 
     const elk = new ELK({
