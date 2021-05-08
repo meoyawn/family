@@ -7,7 +7,7 @@ import { createChild } from "../modification";
 import { useStore } from "../store";
 import { useHover } from "../../lib/useHover";
 import { FamilyID } from "../types";
-import { mkEdge } from "../../lib/elk";
+import { mkEdge, mkNode } from "../../lib/elk";
 
 export const Family = ({ node }: { node: ElkNode }): JSX.Element => {
   const [hoverProps, hovering] = useHover()
@@ -38,17 +38,15 @@ export const Family = ({ node }: { node: ElkNode }): JSX.Element => {
         const pid = createChild(tree, "", fid)
 
         const newRoot = root && { ...root }
-        newRoot?.children?.push({
-          id: pid,
-          x: node.x,
-          y: node.y,
-          width: node.width,
-          height: node.height,
+        newRoot?.children?.push(mkNode(pid, node))
+
+        const eid = `${fid}:${pid}`;
+        newRoot?.edges?.push(mkEdge(eid, node))
+
+        useStore.setState({
+          editing: pid,
+          root: newRoot,
         })
-
-        newRoot?.edges?.push(mkEdge(`${fid}:${pid}`, [node.x!, node.y!, node.x!, node.y!]))
-
-        useStore.setState({ editing: pid, root: newRoot })
       }}
     />
   )

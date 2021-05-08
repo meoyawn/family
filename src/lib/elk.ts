@@ -12,21 +12,6 @@ export const getPoints = (edge: ElkEdge): Array<number> | undefined =>
     return arr
   }, Array<number>())
 
-export const mkEdge = (id: string, [x1, y1, x2, y2]: number[]): ElkEdge => {
-
-  const section: ElkEdgeSection = {
-    id: "",
-    startPoint: { x: x1, y: y1 },
-    endPoint: { x: x2, y: y2 },
-  }
-
-  return {
-    id,
-    // @ts-ignore sections
-    sections: [section],
-  }
-}
-
 export const elkBFS = (root: ElkNode, what: string): ElkNode | undefined => {
   const queue = [root]
 
@@ -49,3 +34,24 @@ export const elkBFS = (root: ElkNode, what: string): ElkNode | undefined => {
     }
   }
 }
+
+export const mkNode = (id: string, node: ElkNode): ElkNode => (
+  {
+    id,
+    x: node.x,
+    y: node.y,
+    width: node.width,
+    height: node.height,
+  }
+)
+
+export const mkEdge = (id: string, node: ElkNode): ElkEdge => (
+  {
+    id,
+    // @ts-ignore sections
+    sections: [{
+      startPoint: { x: node.x, y: node.y },
+      endPoint: { x: node.x, y: node.y },
+    }],
+  }
+)

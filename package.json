@@ -12,7 +12,6 @@
     "react-dom": "^17.0.2",
     "react-hook-form": "^7.0.0",
     "react-konva": "^17.0.2-0",
-    "react-spring": "^9.0.0",
     "y-indexeddb": "^9.0.6",
     "yjs": "^13.5.4",
     "zustand": "^3.5.0"

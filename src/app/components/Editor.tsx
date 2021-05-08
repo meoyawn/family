@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from "react";
-import { ElkNode } from "elkjs/lib/elk-api";
-import { ZoomTransform } from "d3-zoom";
+import React, { useEffect, useRef } from "react"
+import { ElkNode } from "elkjs/lib/elk-api"
+import { ZoomTransform } from "d3-zoom"
 
-import { transformSelector, useStore } from "../store";
-import { FONT_SIZE, LINE_HEIGHT } from "../font";
-import { changeName } from "../modification";
+import { transformSelector, useStore } from "../store"
+import { FONT_SIZE, LINE_HEIGHT } from "../font"
+import { changeName } from "../modification"
+import { PersonID } from "../types"
 
 const selectElementContents = (el: Element) => {
   const range = document.createRange()
@@ -38,10 +39,12 @@ export const Editor = ({ node }: {
     selectElementContents(ref.current)
   }, [node])
 
+  const pid = node.id as PersonID
+
   return (
     <div
       ref={ref}
-      className="absolute focus:outline-none text-center bg-white rounded-sm table-cell align-middle duration-300"
+      className="absolute focus:outline-none text-center bg-white rounded-sm duration-300"
       contentEditable={true}
       role="textbox"
       style={{
@@ -57,7 +60,7 @@ export const Editor = ({ node }: {
       }}
       onBlur={({ target }) => {
         const { tree } = useStore.getState()
-        changeName(tree, node.id, target.innerText)
+        changeName(tree, pid, target.innerText)
         useStore.setState({ editing: undefined })
       }}
     />
