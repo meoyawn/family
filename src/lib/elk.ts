@@ -1,4 +1,4 @@
-import { ElkEdge, ElkEdgeSection, ElkNode } from "elkjs/lib/elk.bundled";
+import { ElkEdge, ElkEdgeSection, ElkNode } from "elkjs/lib/elk-api";
 
 export const sections = (edge: ElkEdge): ReadonlyArray<ElkEdgeSection> | undefined =>
   // @ts-ignore elk typing

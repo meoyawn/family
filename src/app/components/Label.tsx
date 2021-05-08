@@ -1,4 +1,4 @@
-import { ElkLabel } from "elkjs/lib/elk.bundled";
+import { ElkLabel } from "elkjs/lib/elk-api";
 import { Text } from "react-konva";
 import React from "react";
 

@@ -2,7 +2,7 @@ import React from "react";
 import Konva from "konva";
 import { Circle } from "react-konva";
 import { a, useSpring } from '@react-spring/konva'
-import { ElkNode } from "elkjs/lib/elk.bundled"
+import { ElkNode } from "elkjs/lib/elk-api"
 
 import { selectedSelector, useStore } from "../store";
 import { Label } from "./Label";
@@ -26,9 +26,6 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
 
   return (
     <a.Group
-      id={node.id}
-      name="person"
-
       x={x}
       y={y}
 
@@ -87,6 +84,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
       }}
     >
       <a.Rect
+        id={node.id}
         name="person"
         width={width}
         height={height}
@@ -105,7 +103,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
         <Circle
           name="create_parents"
           x={node.width && node.width / 2}
-          radius={3}
+          radius={4}
           fill="black"
         />
       )}
@@ -115,7 +113,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
           name="create_spouse"
           x={node.width}
           y={node.height && node.height / 2}
-          radius={3}
+          radius={4}
           fill="black"
         />
       )}

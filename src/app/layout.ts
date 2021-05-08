@@ -1,4 +1,4 @@
-import { ElkEdge, ElkLabel, ElkNode } from 'elkjs/lib/elk.bundled'
+import { ElkEdge, ElkLabel, ElkNode } from 'elkjs/lib/elk-api'
 
 import { Family, FamilyTree, Person } from "./types";
 import { measureText } from "../lib/text";

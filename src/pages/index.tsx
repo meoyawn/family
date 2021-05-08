@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from "react"
 import * as Y from "yjs"
 import { IndexeddbPersistence } from "y-indexeddb"
-import ELK from "elkjs/lib/elk.bundled"
+import ELK from "elkjs/lib/elk-api"
 import hotkeys from "hotkeys-js";
 import dynamic from "next/dynamic";
 
@@ -40,7 +40,9 @@ export default function Index(): JSX.Element {
     const undoMgr = new Y.UndoManager(Object.values(tree))
     persistence.whenSynced.then(() => undoMgr.clear())
 
-    const elk = new ELK()
+    const elk = new ELK({
+      workerUrl: './elk-worker.min.js',
+    })
 
     const onDocChange = async () => {
       const root = await elk.layout(toELK(tree))

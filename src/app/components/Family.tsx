@@ -1,4 +1,4 @@
-import { ElkNode } from "elkjs/lib/elk.bundled"
+import { ElkNode } from "elkjs/lib/elk-api"
 import React, { useEffect, useRef } from "react"
 import { Circle } from "react-konva"
 import Konva from "konva";

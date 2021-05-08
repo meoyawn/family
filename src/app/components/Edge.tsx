@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import Konva from "konva";
 import { Line } from "react-konva";
-import { ElkEdge } from "elkjs/lib/elk.bundled";
+import { ElkEdge } from "elkjs/lib/elk-api";
 
 import { getPoints } from "../../lib/elk";
 
@@ -11,6 +11,10 @@ export const Edge = ({ edge }: {
   const ref = useRef<Konva.Line>(null)
 
   const points = getPoints(edge) ?? []
+
+  useEffect(() => {
+    ref.current?.points(points)
+  }, [])
 
   useEffect(() => {
     ref.current?.to({ points })

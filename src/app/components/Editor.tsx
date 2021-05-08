@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { ElkNode } from "elkjs/lib/elk.bundled";
+import { ElkNode } from "elkjs/lib/elk-api";
 import { ZoomTransform } from "d3-zoom";
 
 import { transformSelector, useStore } from "../store";

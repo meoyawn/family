@@ -103,6 +103,16 @@ export const makeChild = ({ families }: FamilyTree, pid: PersonID, fid: FamilyID
   if (family.children.includes(pid)) return
 
   families.doc?.transact(() => {
+
+    families.forEach(f => {
+      if (f.children.includes(pid)) {
+        families.set(f.id, {
+          ...f,
+          children: f.children.filter(x => x !== pid),
+        })
+      }
+    })
+
     families.set(fid, {
       ...family,
       children: family.children.concat(pid),

@@ -1,5 +1,5 @@
 import create from "zustand"
-import { ElkNode } from "elkjs/lib/elk.bundled"
+import { ElkNode } from "elkjs/lib/elk-api"
 import { zoomIdentity, ZoomTransform } from "d3-zoom"
 
 import { FamilyID, FamilyTree, PersonID } from "./types"

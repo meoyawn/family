@@ -8,6 +8,8 @@ import InfiniteGrid from "./InfiniteGrid"
 import { ResizingStage } from "../../lib/components/ResizingStage"
 import Graph from "./Graph"
 
+// @ts-ignore https://konvajs.org/api/Konva.html#.captureTouchEventsEnabled__anchor
+Konva.captureTouchEventsEnabled = true
 Konva.hitOnDragEnabled = true
 
 const Arrows = () => {
