@@ -6,22 +6,12 @@ module.exports = {
   },
   plugins: [
     '@typescript-eslint',
-    "react",
-    "jsx-a11y",
   ],
-  settings: {
-    react: {
-      version: "detect"
-    }
-  },
   env: {
-    browser: true,
     node: true,
   },
   extends: [
     "eslint:recommended",
-    "plugin:react/recommended",
-    "plugin:jsx-a11y/recommended",
     'plugin:@typescript-eslint/recommended',
   ],
   rules: {
@@ -37,7 +27,5 @@ module.exports = {
       "minimumDescriptionLength": 1,
     }],
     "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-
-    "jsx-a11y/media-has-caption": "off",
   },
 }
