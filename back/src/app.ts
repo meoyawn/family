@@ -1,5 +1,5 @@
-import restana from "restana";
-import http from "http";
+import restana from "restana"
+import http from "http"
 import WebSocket from 'ws'
 
 const app = restana()
