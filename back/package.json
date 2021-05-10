@@ -2,12 +2,14 @@
   "dependencies": {
     "morgan": "^1.10.0",
     "restana": "^4.9.1",
+    "ws": "^7.4.5",
     "yjs": "^13.5.5"
   },
   "devDependencies": {
     "@types/jest": "^26.0.7",
     "@types/morgan": "^1.9.2",
     "@types/node": "^15.0.2",
+    "@types/ws": "^7.4.2",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "eslint": "^7.26.0",
