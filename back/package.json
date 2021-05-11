@@ -3,6 +3,7 @@
     "morgan": "^1.10.0",
     "restana": "^4.9.1",
     "ws": "^7.4.5",
+    "y-protocols": "^1.0.4",
     "yjs": "^13.5.5"
   },
   "devDependencies": {

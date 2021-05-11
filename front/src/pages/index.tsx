@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef } from "react"
-import * as Y from "yjs"
+import Y from "yjs"
 import { IndexeddbPersistence } from "y-indexeddb"
 import ELK from "elkjs/lib/elk-api"
-import hotkeys from "hotkeys-js";
-import dynamic from "next/dynamic";
+import hotkeys from "hotkeys-js"
+import dynamic from "next/dynamic"
 
 import { editingSelector, rootSelector, useStore } from "../app/store"
 import { FamilyTree } from "../app/types"

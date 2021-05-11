@@ -21,4 +21,3 @@ wsServer.on('connection', ws => {
 server.listen(PORT, () => {
   console.log(`http://localhost:${PORT}`)
 })
-
