@@ -2,7 +2,6 @@ import React from "react"
 
 import SEO from "../lib/components/SEO";
 
-// noinspection JSUnusedGlobalSymbols
 export default function NotFound(): JSX.Element {
   return (
     <div className="prose">

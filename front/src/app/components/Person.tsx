@@ -8,7 +8,7 @@ import { Label } from "./Label";
 import { useHover } from "../../lib/useHover";
 import { stayInPlace } from "../../lib/konva";
 import { createParents, createSpouse, makeChild, marry } from "../modification";
-import { FamilyID, PersonID } from "../types";
+import { ParentsID, PersonID } from "../types";
 import { mkEdge, mkNode } from "../../lib/elk";
 
 export default function Person({ node }: { node: ElkNode }): JSX.Element {
@@ -103,7 +103,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
           }
 
           case "family": {
-            makeChild(tree, pid, drop.id() as FamilyID)
+            makeChild(tree, pid, drop.id() as ParentsID)
             break
           }
         }

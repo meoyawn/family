@@ -2,7 +2,7 @@ import create from "zustand"
 import { ElkNode } from "elkjs/lib/elk-api"
 import { zoomIdentity, ZoomTransform } from "d3-zoom"
 
-import { FamilyID, FamilyTree, PersonID } from "./types"
+import { ParentsID, FamilyTree, PersonID } from "./types"
 import { PointTuple } from "../lib/geometry"
 
 interface State {
@@ -11,7 +11,7 @@ interface State {
   transform: ZoomTransform
   zooming: boolean
 
-  selected: Set<PersonID | FamilyID>
+  selected: Set<PersonID | ParentsID>
 
   root?: ElkNode
   editing?: PersonID
@@ -45,5 +45,5 @@ export const arrowStartSelector = (s: State): PointTuple | undefined =>
 export const arrowEndSelector = (s: State): PointTuple | undefined =>
   s.arrowEnd
 
-export const selectedSelector = (s: State): Set<PersonID | FamilyID> =>
+export const selectedSelector = (s: State): Set<PersonID | ParentsID> =>
   s.selected

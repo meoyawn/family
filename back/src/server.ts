@@ -17,8 +17,7 @@ const PORT = 4000
 const server = http.createServer(app)
 
 const wsServer = new WebSocket.Server({
-  server,
-  path: "/doc",
+  noServer: true
 })
 
 startHeartbeats(wsServer)
@@ -28,10 +27,20 @@ const state: State = {
   persistence: mkPersistence('/tmp/yjs')
 }
 
-wsServer.on('connection', (conn, req) => {
-  console.log(req.url)
+server.on('upgrade', (req, socket, head) => {
+  wsServer.handleUpgrade(req, socket, head, conn => {
+    wsServer.emit('connection', conn, req)
+  })
+})
 
-  setupWSConnection(state, conn, 'foo', true)
+wsServer.on('connection', (conn, { url }) => {
+  if (url?.startsWith("/doc/")) {
+    const pathSegments = url.split("/")
+    const name = pathSegments[pathSegments.length - 1]
+    setupWSConnection(state, conn, name, true)
+  } else {
+    conn.close()
+  }
 })
 
 server.listen(PORT, () => {

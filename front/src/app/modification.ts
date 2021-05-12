@@ -1,17 +1,17 @@
-import { FamilyID, FamilyTree, PersonID, Sex } from "./types";
+import { ParentsID, FamilyTree, PersonID, Sex } from "./types";
 import { genID } from "../lib/ids";
 
-const familyID = (p1: PersonID, p2: PersonID): FamilyID =>
-  [p1, p2].sort().join(':') as FamilyID
+const familyID = (p1: PersonID, p2: PersonID): ParentsID =>
+  [p1, p2].sort().join(':') as ParentsID
 
-export const marry = ({ families, doc }: FamilyTree, p1: PersonID, p2: PersonID): FamilyID | undefined => {
+export const marry = ({ parents, doc }: FamilyTree, p1: PersonID, p2: PersonID): ParentsID | undefined => {
   if (p1 === p2) return undefined
 
   const id = familyID(p1, p2)
-  if (families.get(id)) return undefined
+  if (parents.get(id)) return undefined
 
   doc.transact(() => {
-    families.set(id, {
+    parents.set(id, {
       id,
       p1,
       p2,
@@ -21,7 +21,7 @@ export const marry = ({ families, doc }: FamilyTree, p1: PersonID, p2: PersonID)
   return id
 }
 
-export const createChild = ({ people }: FamilyTree, name: string, sex: Sex, fid?: FamilyID): PersonID => {
+export const createChild = ({ people }: FamilyTree, name: string, sex: Sex, fid?: ParentsID): PersonID => {
   const id = genID('p') as PersonID
 
   people.doc?.transact(() => {
@@ -48,7 +48,7 @@ export const changeName = ({ people }: FamilyTree, pid: PersonID, name: string):
   })
 }
 
-function delFamily({ people, families }: FamilyTree, fid: FamilyID) {
+function delFamily({ people, parents }: FamilyTree, fid: ParentsID) {
   people.forEach(p => {
     if (p.fid === fid) {
       people.set(p.id, {
@@ -58,13 +58,13 @@ function delFamily({ people, families }: FamilyTree, fid: FamilyID) {
     }
   })
 
-  families.delete(fid)
+  parents.delete(fid)
 }
 
 function delPerson(tree: FamilyTree, pid: PersonID) {
-  const { people, families } = tree
+  const { people, parents } = tree
 
-  families.forEach(f => {
+  parents.forEach(f => {
     if (f.p1 === pid || f.p2 === pid) {
       delFamily(tree, f.id)
     }
@@ -73,10 +73,10 @@ function delPerson(tree: FamilyTree, pid: PersonID) {
   people.delete(pid)
 }
 
-const isFamily = (id: FamilyID | PersonID): id is FamilyID =>
+const isFamily = (id: ParentsID | PersonID): id is ParentsID =>
   id.includes(":")
 
-export const deleteStuff = (tree: FamilyTree, del: Set<FamilyID | PersonID>): void => {
+export const deleteStuff = (tree: FamilyTree, del: Set<ParentsID | PersonID>): void => {
   if (!del.size) return
 
   tree.doc.transact(() => {
@@ -90,10 +90,10 @@ export const deleteStuff = (tree: FamilyTree, del: Set<FamilyID | PersonID>): vo
   })
 }
 
-export const makeChild = ({ people, doc, families }: FamilyTree, pid: PersonID, fid: FamilyID): void => {
+export const makeChild = ({ people, doc, parents }: FamilyTree, pid: PersonID, fid: ParentsID): void => {
 
   const person = people.get(pid)
-  const family = families.get(fid)
+  const family = parents.get(fid)
   if (!person || !family) return
 
   if (person.fid === fid || family.p1 === pid || family.p2 === pid) return;
@@ -107,11 +107,11 @@ export const makeChild = ({ people, doc, families }: FamilyTree, pid: PersonID, 
 }
 
 export const createParents = (
-  { people, families, doc }: FamilyTree,
+  { people, parents, doc }: FamilyTree,
   cid: PersonID,
   dad: string,
   mom: string,
-): [PersonID, PersonID, FamilyID] | undefined => {
+): [PersonID, PersonID, ParentsID] | undefined => {
   if (!cid) return undefined
   const child = people.get(cid)
   if (!child) return undefined
@@ -131,7 +131,7 @@ export const createParents = (
       name: mom,
       sex: 'f',
     })
-    families.set(fid, {
+    parents.set(fid, {
       id: fid,
       p1,
       p2,
@@ -155,7 +155,7 @@ const opposite = (s: Sex): Sex => {
   }
 }
 
-export const createSpouse = ({ people, families }: FamilyTree, pid: PersonID): [PersonID, FamilyID] | undefined => {
+export const createSpouse = ({ people, parents }: FamilyTree, pid: PersonID): [PersonID, ParentsID] | undefined => {
   const person = people.get(pid)
   if (!person) return undefined
 
@@ -168,7 +168,7 @@ export const createSpouse = ({ people, families }: FamilyTree, pid: PersonID): [
       name: "",
       sex: opposite(person.sex),
     })
-    families.set(fid, {
+    parents.set(fid, {
       id: fid,
       p1: pid,
       p2: sid,

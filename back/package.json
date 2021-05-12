@@ -23,7 +23,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "nodemon src/app.ts",
+    "dev": "nodemon src/server.ts",
     "lint": "eslint --fix src --ext .js,.jsx,.ts,.tsx",
     "start": "node dist/app.js",
     "test": "jest"

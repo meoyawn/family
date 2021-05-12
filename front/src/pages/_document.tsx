@@ -1,7 +1,6 @@
 import React from "react";
 import Document, { Head, Html, Main, NextScript } from 'next/document'
 
-// noinspection JSUnusedGlobalSymbols
 export default class MyDocument extends Document {
 
   render(): JSX.Element {

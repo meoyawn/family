@@ -1,6 +1,6 @@
 import { ElkEdge, ElkLabel, ElkNode } from 'elkjs/lib/elk-api'
 
-import { Family, FamilyID, FamilyTree, Person } from "./types";
+import { Parents, ParentsID, FamilyTree, Person } from "./types";
 import { measureText } from "../lib/text";
 import { FONT_SIZE, LINE_HEIGHT } from "./font";
 
@@ -68,7 +68,7 @@ const personEdges = ({ id, fid }: Person): ElkEdge[] =>
 
 const smol = 0.000000001
 
-const familyNode = ({ id }: Family): ElkNode => (
+const familyNode = ({ id }: Parents): ElkNode => (
   {
     id,
     width: smol,
@@ -88,10 +88,10 @@ const familyNode = ({ id }: Family): ElkNode => (
   }
 )
 
-const spouses = (id: FamilyID) => `${id}.spouses`
-const children = (id: FamilyID) => `${id}.children`
+const spouses = (id: ParentsID) => `${id}.spouses`
+const children = (id: ParentsID) => `${id}.children`
 
-const familyEdges = ({ id, p1, p2 }: Family): ElkEdge[] =>
+const familyEdges = ({ id, p1, p2 }: Parents): ElkEdge[] =>
   [
     {
       id: `${p1}:${id}`,
@@ -110,7 +110,7 @@ const EDGE_ROUTING: EdgeRouting = "ORTHOGONAL"
 const NODE_PLACEMENT_STRATEGY: NodePlacementStrategy = "NETWORK_SIMPLEX"
 const CYCLE_BREAKING_STRATEGY: CycleBreakingStrategy = "GREEDY"
 
-export const toELK = ({ people, families }: FamilyTree): ElkNode => {
+export const toELK = ({ people, parents }: FamilyTree): ElkNode => {
 
   const root: ElkNode = {
     id: 'root',
@@ -130,7 +130,7 @@ export const toELK = ({ people, families }: FamilyTree): ElkNode => {
     root.edges?.push(...personEdges(p))
   })
 
-  families.forEach(f => {
+  parents.forEach(f => {
     root.children?.push(familyNode(f))
     root.edges?.push(...familyEdges(f))
   })

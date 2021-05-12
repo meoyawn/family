@@ -6,14 +6,14 @@ import Konva from "konva";
 import { createChild } from "../modification";
 import { useStore } from "../store";
 import { useHover } from "../../lib/useHover";
-import { FamilyID } from "../types";
+import { ParentsID } from "../types";
 import { mkEdge, mkNode } from "../../lib/elk";
 
 export const Family = ({ node }: { node: ElkNode }): JSX.Element => {
   const [hoverProps, hovering] = useHover()
   const ref = useRef<Konva.Circle>(null)
 
-  const fid = node.id as FamilyID
+  const fid = node.id as ParentsID
 
   useEffect(() => {
     ref.current?.setPosition({ x: node.x, y: node.y })
