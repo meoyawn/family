@@ -1,18 +1,18 @@
 import React, { useEffect, useMemo, useRef } from "react"
 import { useRouter } from "next/router"
-import * as Y from "yjs";
-import ELK from "elkjs/lib/elk-api";
-import hotkeys from "hotkeys-js";
-import { IndexeddbPersistence } from "y-indexeddb";
-import { WebsocketProvider } from "y-websocket";
+import * as Y from "yjs"
+import ELK from "elkjs/lib/elk-api"
+import hotkeys from "hotkeys-js"
+import { IndexeddbPersistence } from "y-indexeddb"
+import { WebsocketProvider } from "y-websocket"
 
-import { FamilyTree } from "../../app/types";
-import { editingSelector, rootSelector, useStore } from "../../app/store";
-import { toELK } from "../../app/layout";
-import dynamic from "next/dynamic";
-import { elkBFS } from "../../lib/elk";
-import { Editor } from "../../app/components/Editor";
-import { createChild, deleteStuff } from "../../app/modification";
+import { FamilyTree } from "../../app/types"
+import { editingSelector, rootSelector, useStore } from "../../app/store"
+import { toELK } from "../../app/layout"
+import dynamic from "next/dynamic"
+import { elkBFS } from "../../lib/elk"
+import { Editor } from "../../app/components/Editor"
+import { createChild, deleteStuff } from "../../app/modification"
 
 const Canvas = dynamic(() => import("../../app/components/Canvas"), { ssr: false })
 
@@ -78,12 +78,12 @@ export default function FamilyID(): JSX.Element {
     const tree: FamilyTree = {
       doc,
       people: doc.getMap('people'),
-      parents: doc.getMap('families'),
+      families: doc.getMap('families'),
     }
     useStore.setState({ tree })
 
     const persistence = new IndexeddbPersistence(docName, doc)
-    const undoMgr = new Y.UndoManager([tree.people, tree.parents])
+    const undoMgr = new Y.UndoManager([tree.people, tree.families])
     persistence.whenSynced.then(() => undoMgr.clear())
 
     const wsProvider = new WebsocketProvider(`${process.env.NEXT_PUBLIC_WS}`, docName, doc)
@@ -92,11 +92,12 @@ export default function FamilyID(): JSX.Element {
     })
 
     const elk = new ELK({
-      workerUrl: './elk-worker.min.js',
+      workerUrl: '/elk-worker.min.js',
     })
 
     const onDocChange = async () => {
-      const root = await elk.layout(toELK(tree))
+      const graph = toELK(tree);
+      const root = await elk.layout(graph)
       useStore.setState({ root })
     }
     doc.on('update', onDocChange)

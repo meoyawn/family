@@ -1,6 +1,6 @@
 import { ElkEdge, ElkLabel, ElkNode } from 'elkjs/lib/elk-api'
 
-import { Parents, ParentsID, FamilyTree, Person } from "./types";
+import { FamilyTree, Parents, ParentsID, Person } from "./types";
 import { measureText } from "../lib/text";
 import { FONT_SIZE, LINE_HEIGHT } from "./font";
 
@@ -110,7 +110,7 @@ const EDGE_ROUTING: EdgeRouting = "ORTHOGONAL"
 const NODE_PLACEMENT_STRATEGY: NodePlacementStrategy = "NETWORK_SIMPLEX"
 const CYCLE_BREAKING_STRATEGY: CycleBreakingStrategy = "GREEDY"
 
-export const toELK = ({ people, parents }: FamilyTree): ElkNode => {
+export const toELK = ({ people, families }: FamilyTree): ElkNode => {
 
   const root: ElkNode = {
     id: 'root',
@@ -130,10 +130,12 @@ export const toELK = ({ people, parents }: FamilyTree): ElkNode => {
     root.edges?.push(...personEdges(p))
   })
 
-  parents.forEach(f => {
+  families.forEach(f => {
     root.children?.push(familyNode(f))
     root.edges?.push(...familyEdges(f))
   })
+
+  // console.log(JSON.stringify(root, null, 2))
 
   return root
 }

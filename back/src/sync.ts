@@ -1,5 +1,6 @@
 import * as Y from "yjs"
 import { readSyncMessage, writeSyncStep1, writeUpdate } from "y-protocols/sync"
+import { applyAwarenessUpdate, Awareness, encodeAwarenessUpdate, removeAwarenessStates } from 'y-protocols/awareness'
 import { decoding, encoding } from "lib0"
 import WebSocket from "ws"
 
@@ -11,15 +12,16 @@ const messageAwareness = 1
 interface SharedDoc {
   name: string
   doc: Y.Doc
-  conns: Set<WebSocket>
+  conns: Map<WebSocket, Set<number>>
+  awareness: Awareness
 }
 
 export interface State {
-  docs: Partial<Record<string, SharedDoc>>
+  docs: Map<string, SharedDoc>
   persistence: Persistence
 }
 
-const broadcastUpdates = (state: State, doc: SharedDoc) => (update: Uint8Array): void => {
+const updateHandler = (state: State, doc: SharedDoc) => (update: Uint8Array): void => {
   const encoder = encoding.createEncoder()
   encoding.writeVarUint(encoder, messageSync)
   writeUpdate(encoder, update)
@@ -29,28 +31,59 @@ const broadcastUpdates = (state: State, doc: SharedDoc) => (update: Uint8Array):
   })
 }
 
+const awarenessChangeHandler = (state: State, doc: SharedDoc) => (
+  { added, updated, removed }: {
+    added: ReadonlyArray<number>
+    updated: ReadonlyArray<number>
+    removed: ReadonlyArray<number>
+  },
+  conn: WebSocket
+) => {
+  const changedClients = added.concat(updated, removed)
+  if (conn !== null) {
+    const connControlledIDs = doc.conns.get(conn)
+    if (connControlledIDs !== undefined) {
+      added.forEach(clientID => {
+        connControlledIDs.add(clientID)
+      })
+      removed.forEach(clientID => {
+        connControlledIDs.delete(clientID)
+      })
+    }
+  }
+
+  // broadcast awareness update
+  const encoder = encoding.createEncoder()
+  encoding.writeVarUint(encoder, messageAwareness)
+  encoding.writeVarUint8Array(encoder, encodeAwarenessUpdate(doc.awareness, changedClients))
+  const buff = encoding.toUint8Array(encoder)
+  doc.conns.forEach((_, c) => {
+    send(state, doc, c, buff)
+  })
+}
+
 const getYDoc = async (state: State, docname: string, gc = true): Promise<SharedDoc> => {
 
   {
-    const doc = state.docs[docname]
+    const doc = state.docs.get(docname)
     if (doc) return doc
   }
 
-  const yDoc = new Y.Doc({
-    guid: docname,
-    gc,
-  })
-  const doc = {
+  const yDoc = new Y.Doc({ gc })
+  const awareness = new Awareness(yDoc);
+  const doc: SharedDoc = {
     doc: yDoc,
     name: docname,
-    conns: new Set<WebSocket>(),
+    conns: new Map(),
+    awareness,
   }
 
+  awareness.setLocalState(null)
+  awareness.on('update', awarenessChangeHandler(state, doc))
+  yDoc.on('update', updateHandler(state, doc))
   await state.persistence.bindState(docname, yDoc)
-  yDoc.on('update', broadcastUpdates(state, doc))
 
-  state.docs[docname] = doc
-
+  state.docs.set(docname, doc)
   return doc
 }
 
@@ -68,21 +101,25 @@ const onMessage = async (state: State, conn: WebSocket, doc: SharedDoc, message:
       break
 
     case messageAwareness: {
-      // TODO maybe?
+      applyAwarenessUpdate(doc.awareness, decoding.readVarUint8Array(decoder), conn)
       break
     }
   }
 }
 
 const closeConn = async (state: State, doc: SharedDoc, conn: WebSocket) => {
-  doc.conns.delete(conn)
+  const controlledIds = doc.conns.get(conn)
+  if (controlledIds) {
+    doc.conns.delete(conn)
+    removeAwarenessStates(doc.awareness, Array.from(controlledIds), null)
 
-  if (doc.conns.size === 0) {
-    // if persisted, we store state and destroy ydocument
-    await state.persistence.writeState(doc.name, doc.doc)
-    doc.doc.destroy()
+    if (doc.conns.size === 0) {
+      // if persisted, we store state and destroy ydocument
+      await state.persistence.writeState(doc.name, doc.doc)
+      doc.doc.destroy()
 
-    delete state.docs[doc.name]
+      state.docs.delete(doc.name)
+    }
   }
 
   conn.close()
@@ -112,8 +149,7 @@ export const setupWSConnection = async (state: State, conn: WebSocket, docName: 
 
   // get doc, initialize if it does not exist yet
   const doc = await getYDoc(state, docName, gc)
-  doc.conns.add(conn)
-
+  doc.conns.set(conn, new Set())
   // listen and reply to events
   conn.on('message', message => {
     if (message instanceof ArrayBuffer) {
@@ -122,6 +158,7 @@ export const setupWSConnection = async (state: State, conn: WebSocket, docName: 
   })
 
   conn.on('close', () => {
+    console.log('closing')
     closeConn(state, doc, conn)
   })
 
@@ -133,5 +170,12 @@ export const setupWSConnection = async (state: State, conn: WebSocket, docName: 
     encoding.writeVarUint(encoder, messageSync)
     writeSyncStep1(encoder, doc.doc)
     await send(state, doc, conn, encoding.toUint8Array(encoder))
+    const awarenessStates = doc.awareness.getStates()
+    if (awarenessStates.size > 0) {
+      const encoder = encoding.createEncoder()
+      encoding.writeVarUint(encoder, messageAwareness)
+      encoding.writeVarUint8Array(encoder, encodeAwarenessUpdate(doc.awareness, Array.from(awarenessStates.keys())))
+      await send(state, doc, conn, encoding.toUint8Array(encoder))
+    }
   }
 }

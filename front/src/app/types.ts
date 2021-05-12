@@ -27,5 +27,5 @@ export interface Parents {
 export interface FamilyTree {
   doc: Y.Doc
   people: Y.Map<Person>
-  parents: Y.Map<Parents>
+  families: Y.Map<Parents>
 }

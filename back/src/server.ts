@@ -16,32 +16,30 @@ const PORT = 4000
 // @ts-ignore restana types
 const server = http.createServer(app)
 
-const wsServer = new WebSocket.Server({
-  noServer: true
-})
-
-startHeartbeats(wsServer)
+const wsServer = new WebSocket.Server({ noServer: true })
 
 const state: State = {
-  docs: {},
-  persistence: mkPersistence('/tmp/yjs')
+  docs: new Map(),
+  persistence: mkPersistence('/tmp/yjs'),
 }
 
 server.on('upgrade', (req, socket, head) => {
-  wsServer.handleUpgrade(req, socket, head, conn => {
-    wsServer.emit('connection', conn, req)
-  })
+  if (req.url.startsWith("/doc/")) {
+    wsServer.handleUpgrade(req, socket, head, conn => {
+      wsServer.emit('connection', conn, req)
+    })
+  } else {
+    socket.destroy()
+  }
 })
 
 wsServer.on('connection', (conn, { url }) => {
-  if (url?.startsWith("/doc/")) {
-    const pathSegments = url.split("/")
-    const name = pathSegments[pathSegments.length - 1]
-    setupWSConnection(state, conn, name, true)
-  } else {
-    conn.close()
-  }
+  const pathSegments = url!.split("/")
+  const name = pathSegments[pathSegments.length - 1]
+  setupWSConnection(state, conn, name, true)
 })
+
+startHeartbeats(wsServer)
 
 server.listen(PORT, () => {
   console.log(`http://localhost:${PORT}`)
