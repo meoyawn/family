@@ -1,5 +1,5 @@
-import Y from "yjs"
-import syncProtocol from "y-protocols/sync"
+import * as Y from "yjs"
+import * as syncProtocol from "y-protocols/sync"
 import { decoding, encoding } from "lib0"
 import WebSocket from "ws"
 
