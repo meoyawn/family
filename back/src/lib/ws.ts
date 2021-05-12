@@ -2,7 +2,7 @@ import WebSocket from "ws"
 
 const getPings = (conn: WebSocket): number =>
   // @ts-ignore custom prop
-  conn.pingsSent
+  conn.pingsSent ?? 0
 
 const setPings = (conn: WebSocket, num: number) => {
   // @ts-ignore custom prop

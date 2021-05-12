@@ -1,5 +1,5 @@
 import * as Y from "yjs"
-import * as syncProtocol from "y-protocols/sync"
+import { readSyncMessage, writeSyncStep1, writeUpdate } from "y-protocols/sync"
 import { decoding, encoding } from "lib0"
 import WebSocket from "ws"
 
@@ -14,7 +14,6 @@ interface SharedDoc {
   conns: Set<WebSocket>
 }
 
-
 export interface State {
   docs: Partial<Record<string, SharedDoc>>
   persistence: Persistence
@@ -23,7 +22,7 @@ export interface State {
 const broadcastUpdates = (state: State, doc: SharedDoc) => (update: Uint8Array): void => {
   const encoder = encoding.createEncoder()
   encoding.writeVarUint(encoder, messageSync)
-  syncProtocol.writeUpdate(encoder, update)
+  writeUpdate(encoder, update)
   const message = encoding.toUint8Array(encoder)
   doc.conns.forEach((_, conn) => {
     send(state, doc, conn, message);
@@ -31,6 +30,7 @@ const broadcastUpdates = (state: State, doc: SharedDoc) => (update: Uint8Array):
 }
 
 const getYDoc = async (state: State, docname: string, gc = true): Promise<SharedDoc> => {
+
   {
     const doc = state.docs[docname]
     if (doc) return doc
@@ -61,7 +61,7 @@ const onMessage = async (state: State, conn: WebSocket, doc: SharedDoc, message:
   switch (messageType) {
     case messageSync:
       encoding.writeVarUint(encoder, messageSync)
-      syncProtocol.readSyncMessage(decoder, encoder, doc.doc, null)
+      readSyncMessage(decoder, encoder, doc.doc, null)
       if (encoding.length(encoder) > 1) {
         await send(state, doc, conn, encoding.toUint8Array(encoder))
       }
@@ -112,6 +112,7 @@ export const setupWSConnection = async (state: State, conn: WebSocket, docName: 
 
   // get doc, initialize if it does not exist yet
   const doc = await getYDoc(state, docName, gc)
+  doc.conns.add(conn)
 
   // listen and reply to events
   conn.on('message', message => {
@@ -130,7 +131,7 @@ export const setupWSConnection = async (state: State, conn: WebSocket, docName: 
     // send sync step 1
     const encoder = encoding.createEncoder()
     encoding.writeVarUint(encoder, messageSync)
-    syncProtocol.writeSyncStep1(encoder, doc.doc)
+    writeSyncStep1(encoder, doc.doc)
     await send(state, doc, conn, encoding.toUint8Array(encoder))
   }
 }
