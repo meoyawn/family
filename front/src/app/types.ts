@@ -1,4 +1,4 @@
-import Y from "yjs"
+import * as Y from "yjs"
 
 export type FamilyID = string & { readonly __tag: unique symbol }
 export type PersonID = string & { readonly __tag: unique symbol }

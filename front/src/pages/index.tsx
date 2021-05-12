@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from "react"
-import Y from "yjs"
+import * as Y from "yjs"
 import { IndexeddbPersistence } from "y-indexeddb"
 import ELK from "elkjs/lib/elk-api"
 import hotkeys from "hotkeys-js"
