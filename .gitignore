@@ -6,10 +6,6 @@ yarn-error.log
 
 gen/
 
-**/public/sitemap.xml
-**/public/manifest/
-**/public/elk-worker.min.js
-
 out/
 
 .vercel

@@ -1,0 +1,8 @@
+public/elk-worker.min.js
+public/sitemap.xml
+public/manifest
+
+node_modules
+
+.next
+.vercel
