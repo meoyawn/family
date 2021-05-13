@@ -4,7 +4,7 @@ import { applyAwarenessUpdate, Awareness, encodeAwarenessUpdate, removeAwareness
 import { decoding, encoding } from "lib0"
 import WebSocket from "ws"
 
-import { Persistence } from "./lib/yjs";
+import { Persistence } from "./lib/yjs"
 
 const messageSync = 0
 const messageAwareness = 1
@@ -27,7 +27,7 @@ const updateHandler = (state: State, doc: SharedDoc) => (update: Uint8Array): vo
   writeUpdate(encoder, update)
   const message = encoding.toUint8Array(encoder)
   doc.conns.forEach((_, conn) => {
-    send(state, doc, conn, message);
+    send(state, doc, conn, message)
   })
 }
 
@@ -70,7 +70,7 @@ const getYDoc = async (state: State, docname: string, gc = true): Promise<Shared
   }
 
   const yDoc = new Y.Doc({ gc })
-  const awareness = new Awareness(yDoc);
+  const awareness = new Awareness(yDoc)
   const doc: SharedDoc = {
     doc: yDoc,
     name: docname,
@@ -158,7 +158,6 @@ export const setupWSConnection = async (state: State, conn: WebSocket, docName: 
   })
 
   conn.on('close', () => {
-    console.log('closing')
     closeConn(state, doc, conn)
   })
 
