@@ -86,10 +86,12 @@ export default function FamilyID(): JSX.Element {
     const undoMgr = new Y.UndoManager([tree.people, tree.families])
     persistence.whenSynced.then(() => undoMgr.clear())
 
-    const wsProvider = new WebsocketProvider(`${process.env.NEXT_PUBLIC_WS}`, docName, doc)
-    wsProvider.on('status', event => {
-      console.log(event.status) // logs "connected" or "disconnected"
-    })
+    if (process.env.NEXT_PUBLIC_WS) {
+      const wsProvider = new WebsocketProvider(`${process.env.NEXT_PUBLIC_WS}`, docName, doc)
+      wsProvider.on('status', (event: unknown) => {
+        console.log(event)
+      })
+    }
 
     const elk = new ELK({
       workerUrl: '/elk-worker.min.js',
