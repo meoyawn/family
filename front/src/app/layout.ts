@@ -107,8 +107,8 @@ const familyEdges = ({ id, p1, p2 }: Parents): ElkEdge[] =>
 
 const DIRECTION: Direction = "DOWN"
 const EDGE_ROUTING: EdgeRouting = "ORTHOGONAL"
-const NODE_PLACEMENT_STRATEGY: NodePlacementStrategy = "NETWORK_SIMPLEX"
-const CYCLE_BREAKING_STRATEGY: CycleBreakingStrategy = "GREEDY"
+const NODE_PLACEMENT_STRATEGY: NodePlacementStrategy = "LINEAR_SEGMENTS"
+const CYCLE_BREAKING_STRATEGY: CycleBreakingStrategy = "DEPTH_FIRST"
 
 export const toELK = ({ people, families }: FamilyTree): ElkNode => {
 

@@ -45,8 +45,9 @@ export const Editor = ({ node }: {
 
   return (
     <div
+      tabIndex={0}
       ref={ref}
-      className="absolute focus:outline-none text-center bg-white rounded-sm"
+      className="absolute focus:outline-none text-center bg-white rounded-sm overflow-visible"
       contentEditable={true}
       role="textbox"
       style={{
@@ -65,6 +66,15 @@ export const Editor = ({ node }: {
         const { tree } = useStore.getState()
         changeName(tree, pid, target.innerText)
         useStore.setState({ editing: undefined })
+      }}
+      onKeyPress={({ shiftKey, target, code }) => {
+        if (code === "Enter") {
+          if (shiftKey) {
+
+          } else {
+            (target as HTMLElement).blur()
+          }
+        }
       }}
     />
   )

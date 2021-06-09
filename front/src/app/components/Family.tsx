@@ -16,7 +16,7 @@ export const Family = ({ node }: { node: ElkNode }): JSX.Element => {
   const fid = node.id as ParentsID
 
   useEffect(() => {
-    ref.current?.setPosition({ x: node.x, y: node.y })
+    ref.current?.setPosition({ x: node.x!, y: node.y! })
   }, [])
 
   useEffect(() => {

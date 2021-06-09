@@ -15,17 +15,17 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
 
   const [hoverProps, hovering] = useHover()
 
-  const gref = useRef<Konva.Group>(null)
-  const rref = useRef<Konva.Rect>(null)
+  const groupRef = useRef<Konva.Group>(null)
+  const rectRef = useRef<Konva.Rect>(null)
 
   useEffect(() => {
-    gref.current?.setPosition({ x: node.x, y: node.y })
-    rref.current?.setSize({ width: node.width, height: node.height })
+    groupRef.current?.setPosition({ x: node.x!, y: node.y! })
+    rectRef.current?.setSize({ width: node.width, height: node.height })
   }, [])
 
   useEffect(() => {
-    gref.current?.to({ x: node.x, y: node.y })
-    rref.current?.to({ width: node.width, height: node.height })
+    groupRef.current?.to({ x: node.x, y: node.y })
+    rectRef.current?.to({ width: node.width, height: node.height })
   }, [node])
 
   const pid = node.id as PersonID
@@ -35,7 +35,7 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
 
   return (
     <Group
-      ref={gref}
+      ref={groupRef}
       {...hoverProps}
       onClick={({ evt, target }: Konva.KonvaEventObject<MouseEvent>) => {
         const { tree, selected, root } = useStore.getState()
@@ -111,14 +111,14 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
       }}
     >
       <Rect
-        ref={rref}
+        ref={rectRef}
         id={pid}
         name="person"
 
         stroke={hovering ? "blue" : "black"}
         fill="white"
         cornerRadius={2}
-        strokeWidth={isSelected ? 2 : 1}
+        strokeWidth={1}
       />
 
       {node.labels?.map((lbl, i) => (
@@ -141,6 +141,19 @@ export default function Person({ node }: { node: ElkNode }): JSX.Element {
           y={node.height && node.height / 2}
           radius={4}
           fill="black"
+        />
+      )}
+
+      {isSelected && (
+        <Rect
+          stroke="blue"
+          x={-2}
+          y={-2}
+          width={node.width! + 4}
+          height={node.height! + 4}
+          strokeWidth={2}
+          listening={false}
+          cornerRadius={4}
         />
       )}
     </Group>
