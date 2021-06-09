@@ -6,12 +6,7 @@ import { ZoomTransform } from "d3-zoom"
 import { transformSelector, useStore } from "../store";
 
 const toKonva = ({ x, y, k }: ZoomTransform): Partial<Konva.NodeConfig> => (
-  {
-    x,
-    y,
-    scaleX: k,
-    scaleY: k,
-  }
+  { x, y, scaleX: k, scaleY: k, }
 )
 
 export const ZoomingGroup = ({ children }: { children: ReactNode }): JSX.Element => {
